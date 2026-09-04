@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MeloYeloTTS WebSocket Test Client</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap">
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      --bg: #0b1224;
+      --panel: #151e35;
+      --accent: #80ffd3;
+      --text: #e3ecff;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1c2a4b 0%, #080c18 60%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem 1rem;
+    }
+    main {
+      width: min(760px, 100%);
+      background: color-mix(in srgb, var(--panel) 85%, black);
+      border-radius: 26px;
+      padding: 2.25rem;
+      box-shadow: 0 40px 120px rgba(5, 6, 24, 0.7);
+    }
+    h1 {
+      margin: 0 0 1.5rem;
+      font-size: clamp(1.6rem, 3vw, 2.3rem);
+      letter-spacing: 0.04em;
+    }
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.35rem;
+    }
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-size: 1rem;
+      padding: 1rem;
+      resize: vertical;
+      outline: none;
+    }
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(128, 255, 211, 0.25);
+    }
+    .controls {
+      margin: 1.25rem 0 2rem;
+      display: flex;
+      gap: 0.9rem;
+      flex-wrap: wrap;
+    }
+    button {
+      flex: 1;
+      min-width: 170px;
+      border: none;
+      border-radius: 999px;
+      padding: 0.85rem 1.4rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+      color: #050916;
+    }
+    button.primary {
+      background: linear-gradient(135deg, #80ffd3, #60c1ff);
+      box-shadow: 0 12px 32px rgba(128, 255, 211, 0.35);
+    }
+    button.secondary {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text);
+    }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      background: rgba(255, 255, 255, 0.08);
+      margin-bottom: 1rem;
+    }
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #de637d;
+    }
+    .status-pill[data-state="connected"] .status-dot { background: #80ffd3; }
+    .status-pill[data-state="connecting"] .status-dot { background: #ffd480; }
+
+    .log {
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 1.25rem;
+      max-height: 280px;
+      overflow-y: auto;
+      font-family: "JetBrains Mono", "Space Grotesk", monospace;
+    }
+    .log h2 {
+      margin-top: 0;
+      margin-bottom: 0.9rem;
+      font-size: 1.05rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+    .log-entry {
+      margin: 0 0 0.45rem;
+      font-size: 0.95rem;
+      opacity: 0.85;
+    }
+    .timings-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.8rem 0 0;
+      max-height: 140px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+    }
+    .timings-list li {
+      padding: 0.3rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .transcript-card {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+    .transcript-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      gap: 1rem;
+    }
+    .transcript-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+    .transcript-stream {
+      min-height: 96px;
+      max-height: 200px;
+      overflow-y: auto;
+      line-height: 1.8;
+      font-size: 1.05rem;
+    }
+    .transcript-word {
+      display: inline-block;
+      margin-right: 0.4rem;
+      padding: 0.1rem 0.25rem;
+      border-radius: 0.4rem;
+      background: transparent;
+      transition: background 140ms ease, color 140ms ease;
+    }
+    .transcript-word.active {
+      background: rgba(128, 255, 211, 0.25);
+      color: #051221;
+    }
+    .transcript-word.spoken {
+      opacity: 0.55;
+    }
+    .transcript-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-top: 0.8rem;
+      opacity: 0.75;
+    }
+  </style>
+  <script type="module" src="test_audio_client.js" defer></script>
+</head>
+<body>
+  <main>
+    <div class="status-pill" id="connection-status" data-state="disconnected">
+      <span class="status-dot"></span>
+      <span id="status-text">Disconnected</span>
+    </div>
+
+    <h1>Realtime TTS Audio Stream Tester</h1>
+
+    <label for="tts-input">Prompt</label>
+    <textarea id="tts-input"
+              placeholder="Type something for MeloYeloTTS to speak...">Hi there, welcome to MeloYelo streaming.</textarea>
+
+    <div class="controls">
+      <button class="secondary" id="connect-btn">Reconnect WebSocket</button>
+      <button class="primary" id="send-btn">Send prompt &amp; play</button>
+    </div>
+
+    <div class="log">
+      <h2>Events & Timings</h2>
+      <div id="log-lines"></div>
+      <ul id="timings" class="timings-list"></ul>
+    </div>
+
+    <section class="transcript-card">
+      <div class="transcript-header">
+        <h2>Live Transcript</h2>
+        <button class="secondary" id="clear-transcript" type="button">Clear</button>
+      </div>
+      <div id="transcript-stream" class="transcript-stream"></div>
+      <div class="transcript-footer">
+        <span id="transcript-status">Idle</span>
+        <span id="transcript-progress"></span>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
