@@ -1,0 +1,29 @@
+[project]
+name = "pubsubhub"
+version = "1.1.0"
+description = "PubSubHub"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "bottle-dev>=0.13.2",
+    "docopt-ng>=0.9.0",
+    "gevent-websocket>=0.10.1",
+    "pidwatcher>=1.1.0",
+]
+
+[project.scripts]
+pubsubhub = "hub:main"
+
+[tool.setuptools]
+py-modules = ["hub"]
+
+[tool.setuptools.data-files]
+"pubsubhub/public" = [
+    "public/favicon.ico",
+    "public/login.html",
+    "public/register.html",
+    "public/status.html",
+    "public/style.css",
+    "public/pubSubApp.js",
+    "public/pubsub.js",
+]
