@@ -1,0 +1,4 @@
+pubsub: uv run pubsubhub
+#hub:  ROOT=public uv run -m memoriesdb.services.hub
+dbs6: NAME=dbs6   uv run -m memoriesdb.services.dbs6
+llm6: NAME=llm6   uv run -m memoriesdb.services.llm8

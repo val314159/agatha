@@ -1,0 +1,55 @@
+
+====
+
+architeching a new brain
+
+lots of pervious
+
+what did greeks thing
+id/superego/id
+other models
+
+first time in ghistory we can nake a mental model and actually TEST it.
+
+
+====
+
+the Little Man In Yourt Head Runs on Instinct
+
+Instincual agents: hardcoded in traditional computer languages.
+
+non-instrictual agencts: LLMs basically.  or any other ML thing.
+
+
+hierarchy (of agents)
+        .              <--- instinctual     _____
+       ...                                    |
+      .....                                   |
+     .......                                  |
+    .........                  learned --->   |
+   ...........                                |
+  .............                               |
+ ...............                            __|__
+.................    <--- instinctual
+
+this is because the top level, is actually
+physcially located with the low level agents.
+since it should be simple, this makes sense.
+
+now we can store the LLMs seperately
+
+
+---
+
+share video cards rental by model
+
+community?
+
+---
+paper?
+
+is there a way to see how big the context window is?
+can we use this to reload the system prompt every so often?
+
+---
+
