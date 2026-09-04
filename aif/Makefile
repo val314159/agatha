@@ -8,7 +8,7 @@ honcho::
 	. .venv/bin/activate ; honcho start
 
 install: .venv
-	make -C modelfiles
+#	make -C modelfiles
 	uv run --env-file .env -m aif.clients.save_default2
 #	uv run --env-file .env -m aif.clients.save_default
 
