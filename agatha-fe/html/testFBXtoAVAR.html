@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FBX to AVAR Retargeting Comparison</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 1rem; background: #111; color: #eee; }
+    h1 { font-size: 1.2rem; }
+    .controls { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin: 1rem 0; }
+    label { display: flex; flex-direction: column; gap: 0.25rem; }
+    input, select, button { padding: 0.4rem; font: inherit; }
+    button { cursor: pointer; }
+    #output { white-space: pre-wrap; font-family: monospace; background: #222; padding: 1rem; border-radius: 0.25rem; max-height: 80vh; overflow: auto; }
+    .pass { color: #4f4; }
+    .fail { color: #f44; }
+    .warn { color: #ff4; }
+  </style>
+</head>
+<body>
+  <h1>FBX to AVAR Retargeting Comparison</h1>
+  <p>
+    Loads a Mixamo FBX and a VRM, then runs the Old World retargeting path and the New World
+    <code>FbxToAva</code> → <code>AvaToAvar</code> path. Compares the resulting track values.
+  </p>
+
+  <div class="controls">
+    <label>
+      <span>FBX</span>
+      <select id="fbx-path">
+        <option value="/models/Rumba Dancing.fbx">Rumba Dancing.fbx</option>
+        <option value="/models/Arm Stretching.fbx">Arm Stretching.fbx</option>
+        <option value="/models/Salute.fbx">Salute.fbx</option>
+        <option value="/models/Silly Dancing.fbx">Silly Dancing.fbx</option>
+        <option value="/models/Texting While Standing.fbx">Texting While Standing.fbx</option>
+        <option value="/models/Dying.fbx">Dying.fbx</option>
+      </select>
+    </label>
+    <label>
+      <span>VRM</span>
+      <select id="vrm-path">
+        <option value="/models/avaAvatar.vrm">avaAvatar.vrm</option>
+        <option value="/models/VRM1_Constraint_Twist_Sample.vrm">VRM1_Constraint_Twist_Sample.vrm</option>
+      </select>
+    </label>
+    <button id="run-btn" type="button">Run Comparison</button>
+  </div>
+
+  <div id="output">Click Run Comparison to start.</div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+        "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js",
+        "@pixiv/three-vrm-core": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm-core@3/lib/three-vrm-core.module.js"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+    import { FbxToAva } from '/src/FbxToAva.js';
+    import { AvaToAvar } from '/src/AvaToAvar.js';
+
+    const MIXAMO_TO_VRM = {
+      'mixamorigHips': 'hips',
+      'mixamorigSpine': 'spine',
+      'mixamorigSpine1': 'chest',
+      'mixamorigSpine2': 'upperChest',
+      'mixamorigNeck': 'neck',
+      'mixamorigHead': 'head',
+      'mixamorigLeftShoulder': 'leftShoulder',
+      'mixamorigLeftArm': 'leftUpperArm',
+      'mixamorigLeftForeArm': 'leftLowerArm',
+      'mixamorigLeftHand': 'leftHand',
+      'mixamorigRightShoulder': 'rightShoulder',
+      'mixamorigRightArm': 'rightUpperArm',
+      'mixamorigRightForeArm': 'rightLowerArm',
+      'mixamorigRightHand': 'rightHand',
+      'mixamorigLeftUpLeg': 'leftUpperLeg',
+      'mixamorigLeftLeg': 'leftLowerLeg',
+      'mixamorigLeftFoot': 'leftFoot',
+      'mixamorigLeftToeBase': 'leftToes',
+      'mixamorigRightUpLeg': 'rightUpperLeg',
+      'mixamorigRightLeg': 'rightLowerLeg',
+      'mixamorigRightFoot': 'rightFoot',
+      'mixamorigRightToeBase': 'rightToes',
+    };
+
+    const _vec3 = new THREE.Vector3();
+    const _vec3_2 = new THREE.Vector3();
+    const _quatA = new THREE.Quaternion();
+    const _quatB = new THREE.Quaternion();
+    const _quatC = new THREE.Quaternion();
+    const _quatD = new THREE.Quaternion();
+    const _quatE = new THREE.Quaternion();
+    const _quatRestInverse = new THREE.Quaternion();
+    const _flatQuaternion = new Float32Array(4);
+
+    const output = document.getElementById('output');
+    const runBtn = document.getElementById('run-btn');
+
+    function log(...parts) {
+      const line = parts.map((p) => (typeof p === 'string' ? p : JSON.stringify(p))).join(' ');
+      output.textContent += line + '\n';
+    }
+
+    function clear() {
+      output.textContent = '';
+    }
+
+    async function loadVrm(path) {
+      const loader = new GLTFLoader();
+      loader.register((parser) => new VRMLoaderPlugin(parser));
+      const gltf = await loader.loadAsync(path);
+      const vrm = gltf.userData?.vrm;
+      if (vrm) VRMUtils.rotateVRM0?.(vrm);
+      return vrm;
+    }
+
+    async function loadFbx(path) {
+      const loader = new FBXLoader();
+      return loader.loadAsync(path);
+    }
+
+    function oldWorldRetarget(root, vrm) {
+      const clips = root.animations || [];
+      if (clips.length === 0) throw new Error('FBX has no animations');
+      const clip = THREE.AnimationClip.findByName(clips, 'mixamo.com') || clips[0];
+
+      const mixamoHips = root.getObjectByName('mixamorigHips');
+      const vrmHipsNode = vrm.humanoid?.getNormalizedBoneNode('hips');
+      if (!mixamoHips || !vrmHipsNode) throw new Error('Missing hips bone');
+
+      const vrmHipsY = vrmHipsNode.getWorldPosition(_vec3).y;
+      const vrmRootY = vrm.scene.getWorldPosition(_vec3_2).y;
+      const vrmHipsHeight = Math.abs(vrmHipsY - vrmRootY);
+      const motionHipsHeight = mixamoHips.position.y;
+      const hipsPositionScale = vrmHipsHeight / motionHipsHeight;
+
+      const result = {
+        scale: hipsPositionScale,
+        tracks: [],
+      };
+
+      for (const track of clip.tracks) {
+        const [mixamoBoneName, property] = track.name.split('.');
+        const vrmBoneName = MIXAMO_TO_VRM[mixamoBoneName];
+        if (!vrmBoneName) continue;
+
+        const vrmBoneNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName);
+        const mixamoBone = root.getObjectByName(mixamoBoneName);
+        if (!vrmBoneNode || !mixamoBone) continue;
+
+        const mixamoBoneParent = mixamoBone.parent;
+        const mixamoBoneParentWorldRotation = mixamoBoneParent.getWorldQuaternion(_quatD);
+        const mixamoBoneWorldRotation = mixamoBone.getWorldQuaternion(_quatE);
+
+        const restRotationInverse = _quatRestInverse.copy(mixamoBoneWorldRotation).invert();
+        const parentRestWorldRotation = mixamoBoneParentWorldRotation;
+
+        if (property === 'quaternion') {
+          const values = new Float32Array(track.values);
+          for (let i = 0; i < values.length; i += 4) {
+            _flatQuaternion[0] = values[i];
+            _flatQuaternion[1] = values[i + 1];
+            _flatQuaternion[2] = values[i + 2];
+            _flatQuaternion[3] = values[i + 3];
+            _quatA.fromArray(_flatQuaternion);
+            _quatA.premultiply(parentRestWorldRotation).multiply(restRotationInverse);
+            _quatA.toArray(_flatQuaternion);
+            values[i] = _flatQuaternion[0];
+            values[i + 1] = _flatQuaternion[1];
+            values[i + 2] = _flatQuaternion[2];
+            values[i + 3] = _flatQuaternion[3];
+          }
+          const isVrm0 = vrm.meta?.metaVersion === '0';
+          const finalValues = isVrm0 ? values.map((v, i) => (i % 2 === 0 ? -v : v)) : Array.from(values);
+          result.tracks.push({ bone: vrmBoneName, property: 'quaternion', times: Array.from(track.times), values: finalValues });
+        } else if (property === 'position') {
+          const values = track.values.map((v, i) => (vrm.meta?.metaVersion === '0' && i % 3 !== 1 ? -v : v) * hipsPositionScale);
+          result.tracks.push({ bone: vrmBoneName, property: 'position', times: Array.from(track.times), values: Array.from(values) });
+        }
+      }
+
+      return result;
+    }
+
+    function newWorldRetarget(root, vrm, label) {
+      const fbxToAva = new FbxToAva();
+      const ava = fbxToAva.convert(root, label);
+
+      const humanToMixamo = Object.fromEntries(
+        Object.entries(MIXAMO_TO_VRM).map(([mixamo, human]) => [human, mixamo])
+      );
+      log('Debug: comparing .ava stored source world rotations with live values');
+      let maxStoredDiff = 0;
+      let maxParentDiff = 0;
+      for (const bone of ava.skeleton.bones) {
+        const mixamoName = humanToMixamo[bone.name];
+        if (!mixamoName) continue;
+        const node = root.getObjectByName(mixamoName);
+        if (!node) continue;
+        const live = new THREE.Quaternion();
+        node.getWorldQuaternion(live);
+        const stored = new THREE.Quaternion().fromArray(bone.restWorldRotation);
+        const liveParent = new THREE.Quaternion();
+        if (node.parent) node.parent.getWorldQuaternion(liveParent);
+        const storedParent = bone.parentRestWorldRotation
+          ? new THREE.Quaternion().fromArray(bone.parentRestWorldRotation)
+          : new THREE.Quaternion();
+        const diff = Math.max(
+          Math.abs(live.x - stored.x), Math.abs(live.y - stored.y),
+          Math.abs(live.z - stored.z), Math.abs(live.w - stored.w)
+        );
+        const parentDiff = Math.max(
+          Math.abs(liveParent.x - storedParent.x), Math.abs(liveParent.y - storedParent.y),
+          Math.abs(liveParent.z - storedParent.z), Math.abs(liveParent.w - storedParent.w)
+        );
+        maxStoredDiff = Math.max(maxStoredDiff, diff);
+        maxParentDiff = Math.max(maxParentDiff, parentDiff);
+      }
+      log('Debug: max stored restWorldRotation diff', maxStoredDiff.toExponential(4));
+      log('Debug: max stored parentRestWorldRotation diff', maxParentDiff.toExponential(4));
+
+      const avaToAvar = new AvaToAvar(vrm, { modelPath: 'test-vrm' });
+      return avaToAvar.bake(ava);
+    }
+
+    function compare(oldResult, newResult) {
+      const oldTracks = new Map();
+      for (const t of oldResult.tracks) {
+        oldTracks.set(`${t.bone}.${t.property}`, t);
+      }
+
+      let total = 0;
+      let maxDiff = 0;
+      let mismatched = 0;
+      let matched = 0;
+      const perTrack = [];
+
+      for (const newTrack of newResult.tracks) {
+        const key = `${newTrack.bone}.${newTrack.property}`;
+        const oldTrack = oldTracks.get(key);
+        if (!oldTrack) {
+          perTrack.push({ key, status: 'missing in old', maxDiff: null });
+          continue;
+        }
+
+        const len = Math.min(newTrack.values.length, oldTrack.values.length);
+        let trackMax = 0;
+        let trackTotal = 0;
+        for (let i = 0; i < len; i++) {
+          const diff = Math.abs(newTrack.values[i] - oldTrack.values[i]);
+          trackMax = Math.max(trackMax, diff);
+          trackTotal += diff;
+        }
+        total += trackTotal;
+        maxDiff = Math.max(maxDiff, trackMax);
+        matched += 1;
+        perTrack.push({ key, status: trackMax < 0.001 ? 'pass' : 'warn', maxDiff: trackMax });
+      }
+
+      for (const oldTrack of oldResult.tracks) {
+        const key = `${oldTrack.bone}.${oldTrack.property}`;
+        const newTrack = newResult.tracks.find((t) => `${t.bone}.${t.property}` === key);
+        if (!newTrack) {
+          mismatched += 1;
+          perTrack.push({ key, status: 'missing in new', maxDiff: null });
+        }
+      }
+
+      const overall = mismatched === 0 && maxDiff < 0.001 ? 'PASS' : 'FAIL';
+      return { total, maxDiff, matched, mismatched, perTrack, overall };
+    }
+
+    runBtn.addEventListener('click', async () => {
+      clear();
+      runBtn.disabled = true;
+      const fbxPath = document.getElementById('fbx-path').value;
+      const vrmPath = document.getElementById('vrm-path').value;
+
+      try {
+        log('Loading VRM:', vrmPath);
+        const vrm = await loadVrm(vrmPath);
+        log('VRM meta version:', vrm.meta?.metaVersion ?? 'unknown');
+
+        log('Loading FBX:', fbxPath);
+        const root = await loadFbx(fbxPath);
+        log('FBX clip:', root.animations[0]?.name, root.animations[0]?.duration);
+
+        log('Running Old World retarget...');
+        const oldResult = oldWorldRetarget(root, vrm);
+        log('Old World tracks:', oldResult.tracks.length, 'scale:', oldResult.scale);
+
+        log('Running New World retarget...');
+        const newResult = newWorldRetarget(root, vrm, fbxPath);
+        const newWorldEffectiveScale = newResult.positionScale * newResult.sourceUnitScale;
+        log('New World tracks:', newResult.tracks.length);
+        log('New World sourceUnitScale:', newResult.sourceUnitScale, 'positionScale:', newResult.positionScale, 'effectiveScale:', newWorldEffectiveScale);
+        log('New World sourceHipsHeight:', newResult.sourceHipsHeight, 'targetHipsHeight:', newResult.targetHipsHeight);
+
+        const scaleDiff = Math.abs(oldResult.scale - newWorldEffectiveScale);
+        if (scaleDiff > 0.0001) {
+          log('<span class="warn">WARN:</span> Old/New effective scales differ:', oldResult.scale, 'vs', newWorldEffectiveScale, 'diff:', scaleDiff);
+        } else {
+          log('<span class="pass">OK:</span> effective scales match:', oldResult.scale, '~', newWorldEffectiveScale);
+        }
+
+        log('Comparing...');
+        const result = compare(oldResult, newResult);
+        log('');
+        log('Matched tracks:', result.matched);
+        log('Mismatched tracks:', result.mismatched);
+        log('Max value difference:', result.maxDiff.toExponential(4));
+        log('Total absolute difference:', result.total.toExponential(4));
+        log('');
+        log('Per-track:');
+        for (const t of result.perTrack) {
+          const marker = t.status === 'pass' ? 'PASS' : t.status === 'warn' ? 'WARN' : 'MISS';
+          const className = t.status === 'pass' ? 'pass' : t.status === 'warn' ? 'warn' : 'fail';
+          const diff = t.maxDiff !== null ? t.maxDiff.toExponential(4) : 'n/a';
+          log(`<span class="${className}">${marker}</span> ${t.key} maxDiff=${diff}`);
+        }
+
+        log('');
+        const overallClass = result.overall === 'PASS' ? 'pass' : 'fail';
+        log(`<span class="${overallClass}">Overall: ${result.overall}</span>`);
+      } catch (err) {
+        log('<span class="fail">ERROR:</span>', err.message);
+        console.error(err);
+      } finally {
+        runBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
