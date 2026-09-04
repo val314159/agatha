@@ -1,0 +1,15 @@
+
+*.out
+*.err
+*.log
+
+*~
+.*~
+
+\#*\#
+.\#*
+
+__pycache__
+.venv
+venv
+uv.lock

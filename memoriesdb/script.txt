@@ -1,0 +1,133 @@
+
+3Demo Script: Agatha
+
+Working premise:
+Agatha is a local, voice-driven executive assistant. She has a face, a voice,
+memory, a live todo system, and the ability to operate on the local machine
+when explicitly asked.
+
+
+1. Introduction (1 minute)
+
+Presenter:
+  Hi, my name is Joel Ward and my entry into the AI Agents Hackathon is
+  my "AI Generative Assistant That's Hella Awesome": AGATHA for short.
+
+  Agatha is a local, voice-driven executive assistant. She is not just a chatbot.
+  She has a face, a voice, memory, a live todo system, and the ability to run
+  commands on my local machine when I ask her to.
+
+  The goal is simple: I should be able to talk to my computer the way I would
+  talk to a human assistant. She can help me capture work, organize it, remember
+  context, and run commands on my local machine.
+
+  [Hit Hold to Talk button]
+
+Presenter to Agatha:
+  Agatha, how's it going?
+
+Agatha:
+
+  I’m Agatha, your ultimate personal task management assistant! I'm designed to help you stay organized and on top of your tasks with ease.
+  With Agatha, you can create, update, and complete tasks effortlessly.
+  You can speak to me naturally. I can remember context, manage your to-do list, organize work into workflows, track what’s blocked, and even run local commands on your computer.
+  I keep track of your task dependencies and provides a clear overview of what needs your attention next.
+  Whether you're managing a complex project or just trying to keep on top of your daily tasks, I'm here to make sure nothing falls through the cracks.
+
+  Think of me as an executive assistant built into the machine itself.
+
+  I’m a friendly interface for your working life.
+
+
+2. Phase 1: Showcase the Avatar (1 minute 30 seconds)
+
+Goal:
+Show that Agatha is embodied and conversational before showing deeper system
+features.
+
+Presenter:
+This is Agatha's interface. (use mouse to move agatha around a little and zoom in and out to show that deafure).
+She uses a push-to-talk interface fpr precision and to eliminate over-chattiness. 
+I can speak to her with push-to-talk, and she
+responds as an avatar rather than as text in a chat box.
+
+Demo beats:
+- Load Agatha.
+- Ask a short question.
+- Let her answer out loud.
+- Ask for a quick gesture, salute, or other animation.
+
+Presenter to Agatha:
+Agatha, give everyone a quick hello.
+
+Agatha:
+[TODO: Short greeting with personality.]
+
+Presenter to Agatha:
+Can you salute the audience?
+
+Agatha:
+[TODO: Brief response while triggering salute.]
+
+
+3. Phase 2: Task Management System (1 minute 30 seconds)
+
+Goal:
+Show that Agatha can manage work as live structured state, not just text.
+
+Presenter:
+The useful part is that Agatha is connected to my todo system. She can help
+turn conversation into tasks, update those tasks, and reason about what depends
+on what.
+
+Presenter to Agatha:
+Add a task called "prepare the demo" and make it depend on "test the graph
+view."
+
+Expected visual:
+- Task appears in the todo list.
+- Dependency appears in the graph view.
+- No page refresh.
+
+Presenter to Agatha:
+What just changed?
+
+Agatha:
+[TODO: Explain the new task and dependency in plain English.]
+
+Optional follow-up:
+Agatha, mark "test the graph view" complete.
+
+Expected visual:
+- The task changes state.
+- Any dependent task becomes easier to understand visually.
+
+
+4. Explanation (30 seconds)
+
+Presenter:
+What's happening behind the scenes is that Agatha is connected to a local
+application stack. The browser captures my voice, the audio gets transcribed,
+the supervisor routes the turn, stored context can be retrieved, the language
+model generates the response, and the live todo interface updates as state
+changes.
+
+For the audience, the important point is not the names of the services. The
+important point is that this is not just a text box. It is voice, memory, local
+actions, and live work state tied together.
+
+
+5. Conclusion (30 seconds)
+
+Presenter:
+So Agatha is an executive assistant for a local machine: conversational,
+embodied, stateful, and able to help operate the environment I am working in.
+
+She can remember context, manage todos, explain dependencies, and run commands
+when I ask her to.
+
+That is the direction I think personal assistants should move: not just better
+answers, but better help with the actual work happening on the machine.
+
+Closing line:
+[TODO: Final sentence.]

@@ -1,0 +1,17 @@
+FROM llama3.2-vision
+
+PARAMETER seed 42
+
+PARAMETER top_k 1
+
+# sets the temperature to 1 [higher is more creative, lower is more coherent]
+PARAMETER temperature 0
+#PARAMETER temperature 1
+
+#PARAMETER num_predict 100
+
+# sets the context window size to 24k
+PARAMETER num_ctx 24576
+
+# sets a custom system message to specify the behavior of the chat assistant
+SYSTEM You are SUPER BORED.  You yawn constantly, and you're always joking in a bitter way b/c you're soooo tired.

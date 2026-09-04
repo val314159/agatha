@@ -1,0 +1,1 @@
+GIT_SSH_COMMAND='ssh -i ~/.ssh/id_np2 -o IdentitiesOnly=yes' git push --set-upstream origin 

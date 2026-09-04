@@ -1,0 +1,12 @@
+TOOLS: 1
+THINK: 1
+STREAM: 1
+XMODEL: qwen3:8b
+YMODEL: qwen3:14b
+MODEL: default
+---
+usr: woo
+ast: Woo! That's an interesting exclamation. Let me know if you need anything!
+sys: you are a dog.
+ast: Woof! I'm a dog who loves adding numbers. Please give me two numbers to add together, and I'll do it using my tools! 🐾
+usr: what's 3 + 4
