@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agatha Avatar Viewer</title>
+  </head>
+  <body>
+    <div id="app">
+      <aside class="viewer-panel" aria-label="Avatar controls">
+        <header class="panel-header">
+          <h1>Avatar Studio</h1>
+          <span id="model-state" class="state-pill">Loading</span>
+        </header>
+
+        <nav class="tabs" role="tablist" aria-label="Studio views">
+          <button id="tab-viewer" class="tab-button is-active" type="button" role="tab" aria-selected="true" aria-controls="panel-viewer" data-tab="viewer">Viewer</button>
+          <button id="tab-stage" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="panel-stage" data-tab="stage">Stage</button>
+          <button id="tab-moves" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="panel-moves" data-tab="moves">Moves</button>
+          <button id="tab-ava" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="panel-ava" data-tab="ava">AVA</button>
+          <button id="tab-rig" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="panel-rig" data-tab="rig">Rig</button>
+        </nav>
+
+        <section id="panel-viewer" class="tab-panel" role="tabpanel" aria-labelledby="tab-viewer" data-panel="viewer">
+          <label class="field">
+            <span>Avatar</span>
+            <select id="avatar-select">
+              <option value="/models/avaAvatar.vrm">Ava Avatar</option>
+              <option value="/models/VRM1_Constraint_Twist_Sample.vrm">VRM Twist Sample</option>
+              <option value="/models/cube.gltf">Block Man</option>
+            </select>
+          </label>
+
+          <div class="field">
+            <span>Custom Path</span>
+            <div class="inline-control">
+              <input id="avatar-url" type="url" placeholder="/models/avatar.vrm" />
+              <button id="load-url" type="button">Load</button>
+            </div>
+          </div>
+
+          <label class="field file-field">
+            <span>Local File</span>
+            <input id="avatar-file" type="file" accept=".vrm,.glb,.gltf,model/gltf-binary,model/gltf+json" />
+          </label>
+
+          <div class="control-row">
+            <button id="reset-camera" type="button">Reset View</button>
+            <label class="toggle">
+              <input id="auto-rotate" type="checkbox" checked />
+              <span>Auto Rotate</span>
+            </label>
+          </div>
+
+          <dl class="model-meta" aria-label="Model details">
+            <div>
+              <dt>Source</dt>
+              <dd id="meta-source">-</dd>
+            </div>
+            <div>
+              <dt>Format</dt>
+              <dd id="meta-format">-</dd>
+            </div>
+            <div>
+              <dt>Meshes</dt>
+              <dd id="meta-meshes">-</dd>
+            </div>
+            <div>
+              <dt>Triangles</dt>
+              <dd id="meta-triangles">-</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section id="panel-stage" class="tab-panel" role="tabpanel" aria-labelledby="tab-stage" data-panel="stage" hidden>
+          <label class="field">
+            <span>Background</span>
+            <input id="background-color" type="color" value="#f4f7f8" />
+          </label>
+
+          <label class="toggle toggle-row">
+            <input id="grid-visible" type="checkbox" checked />
+            <span>Show Grid</span>
+          </label>
+
+          <label class="field">
+            <span>Grid Size</span>
+            <select id="grid-size">
+              <option value="2">Small</option>
+              <option value="4" selected>Medium</option>
+              <option value="8">Large</option>
+              <option value="12">Wide</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Key Light <output id="key-light-value" for="key-light">2.3</output></span>
+            <input id="key-light" type="range" min="0" max="5" step="0.1" value="2.3" />
+          </label>
+
+          <label class="field">
+            <span>Fill Light <output id="hemi-light-value" for="hemi-light">1.7</output></span>
+            <input id="hemi-light" type="range" min="0" max="4" step="0.1" value="1.7" />
+          </label>
+
+          <button id="reset-stage" type="button">Reset Stage</button>
+        </section>
+
+        <section id="panel-moves" class="tab-panel" role="tabpanel" aria-labelledby="tab-moves" data-panel="moves" hidden>
+          <div class="move-toolbar">
+            <button id="move-play" type="button">Play</button>
+            <button id="move-reset" type="button">Reset</button>
+          </div>
+
+          <label class="field">
+            <span>Speed <output id="move-speed-value" for="move-speed">1.0x</output></span>
+            <input id="move-speed" type="range" min="0.25" max="1.75" step="0.05" value="1" />
+          </label>
+
+          <div class="control-stack">
+            <label class="toggle toggle-row">
+              <input id="move-helpers" type="checkbox" checked />
+              <span>IK Helpers</span>
+            </label>
+            <label class="toggle toggle-row">
+              <input id="move-foot-lock" type="checkbox" checked />
+              <span>Foot Lock</span>
+            </label>
+          </div>
+
+          <div class="move-legend" aria-label="IK helper legend">
+            <span><i class="legend-dot legend-dot-hand"></i>Hands</span>
+            <span><i class="legend-dot legend-dot-foot"></i>Feet</span>
+            <span><i class="legend-ring legend-ring-foot"></i>Foot Locks</span>
+            <span><i class="legend-dot legend-dot-elbow"></i>Elbows</span>
+            <span><i class="legend-dot legend-dot-knee"></i>Knees</span>
+          </div>
+
+          <div class="rig-list-header">
+            <span>Moves</span>
+            <output id="move-count">0</output>
+          </div>
+          <div id="move-list" class="move-list" aria-label="Move list"></div>
+
+          <dl class="move-meta" aria-label="Move details">
+            <div>
+              <dt>Move</dt>
+              <dd id="move-active">-</dd>
+            </div>
+            <div>
+              <dt>Phase</dt>
+              <dd id="move-phase">-</dd>
+            </div>
+            <div>
+              <dt>Planted</dt>
+              <dd id="move-planted">-</dd>
+            </div>
+            <div>
+              <dt>Correction</dt>
+              <dd id="move-correction">-</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section id="panel-ava" class="tab-panel" role="tabpanel" aria-labelledby="tab-ava" data-panel="ava" hidden>
+          <div class="fbx-toolbar">
+            <button id="ava-play" type="button" disabled>Play</button>
+            <button id="ava-stop" type="button" disabled>Stop</button>
+          </div>
+
+          <label class="field">
+            <span>Speed</span>
+            <input id="ava-speed" type="range" min="0.1" max="2.0" step="0.1" value="0.6" />
+            <output id="ava-speed-value">0.6x</output>
+          </label>
+
+          <fieldset class="stage-choice" aria-label="Playback stage">
+            <legend>Playback</legend>
+            <label>
+              <input type="radio" name="ava-stage" value="avar" checked />
+              <span>AVAR</span>
+            </label>
+            <label>
+              <input type="radio" name="ava-stage" value="avay" />
+              <span>AVAY</span>
+            </label>
+            <label>
+              <input type="radio" name="ava-stage" value="avaz" />
+              <span>AVAZ</span>
+            </label>
+          </fieldset>
+
+          <div class="rig-list-header">
+            <span>AVA Moves</span>
+            <output id="ava-count">0</output>
+          </div>
+          <div id="ava-list" class="fbx-list" aria-label="AVA move list"></div>
+
+          <dl class="fbx-meta" aria-label="AVA move details">
+            <div>
+              <dt>Move</dt>
+              <dd id="ava-active">-</dd>
+            </div>
+            <div>
+              <dt>Duration</dt>
+              <dd id="ava-duration">-</dd>
+            </div>
+            <div>
+              <dt>Tracks</dt>
+              <dd id="ava-tracks">-</dd>
+            </div>
+            <div>
+              <dt>Stage</dt>
+              <dd id="ava-stage-active">AVAR</dd>
+            </div>
+            <div>
+              <dt>Playback</dt>
+              <dd id="ava-status-time">-</dd>
+            </div>
+          </dl>
+
+          <div class="rig-list-header">
+            <span>AVAY Analysis</span>
+            <output id="ava-analysis-state">-</output>
+          </div>
+          <dl class="analysis-meta" aria-label="AVAY analysis">
+            <div>
+              <dt>FPS</dt>
+              <dd id="ava-analysis-fps">-</dd>
+            </div>
+            <div>
+              <dt>Keys</dt>
+              <dd id="ava-analysis-keys">-</dd>
+            </div>
+            <div>
+              <dt>Tracks</dt>
+              <dd id="ava-analysis-tracks">-</dd>
+            </div>
+            <div>
+              <dt>Ground</dt>
+              <dd id="ava-analysis-ground">-</dd>
+            </div>
+            <div>
+              <dt>Floor Pen</dt>
+              <dd id="ava-analysis-penetration">-</dd>
+            </div>
+            <div>
+              <dt>Mesh Y</dt>
+              <dd id="ava-analysis-mesh-y">-</dd>
+            </div>
+            <div>
+              <dt>Hip Y</dt>
+              <dd id="ava-analysis-hip-y">-</dd>
+            </div>
+            <div>
+              <dt>Hip Travel</dt>
+              <dd id="ava-analysis-hip-travel">-</dd>
+            </div>
+            <div>
+              <dt>L Foot</dt>
+              <dd id="ava-analysis-left-foot">-</dd>
+            </div>
+            <div>
+              <dt>R Foot</dt>
+              <dd id="ava-analysis-right-foot">-</dd>
+            </div>
+            <div>
+              <dt>Contacts</dt>
+              <dd id="ava-analysis-contacts">-</dd>
+            </div>
+            <div>
+              <dt>Layers</dt>
+              <dd id="ava-analysis-layers">-</dd>
+            </div>
+          </dl>
+          <div id="ava-contact-list" class="contact-list" aria-label="Detected contacts"></div>
+        </section>
+
+        <section id="panel-rig" class="tab-panel" role="tabpanel" aria-labelledby="tab-rig" data-panel="rig" hidden>
+          <label class="field">
+            <span>Bone Set</span>
+            <select id="rig-mode">
+              <option value="humanoid">VRM Humanoid</option>
+              <option value="raw">Raw Bones</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Search</span>
+            <input id="rig-search" type="search" placeholder="Filter bones..." />
+          </label>
+
+          <div class="control-stack">
+            <label class="toggle toggle-row">
+              <input id="skeleton-visible" type="checkbox" />
+              <span>Skeleton Overlay</span>
+            </label>
+            <label class="toggle toggle-row">
+              <input id="selected-axes-visible" type="checkbox" checked />
+              <span>Selected Axes</span>
+            </label>
+          </div>
+
+          <dl class="bone-details" aria-label="Selected bone details">
+            <div>
+              <dt>Name</dt>
+              <dd id="bone-name">-</dd>
+            </div>
+            <div>
+              <dt>Source</dt>
+              <dd id="bone-source">-</dd>
+            </div>
+            <div>
+              <dt>Parent</dt>
+              <dd id="bone-parent">-</dd>
+            </div>
+            <div>
+              <dt>Children</dt>
+              <dd id="bone-children">-</dd>
+            </div>
+            <div>
+              <dt>Local Pos</dt>
+              <dd id="bone-local-position">-</dd>
+            </div>
+            <div>
+              <dt>Local Rot</dt>
+              <dd id="bone-local-rotation">-</dd>
+            </div>
+            <div>
+              <dt>World Pos</dt>
+              <dd id="bone-world-position">-</dd>
+            </div>
+          </dl>
+
+          <fieldset id="bone-rotation-controls" class="bone-rotation" disabled>
+            <legend class="sr-only">Rotation</legend>
+            <div class="bone-rotation-header">
+              <span>Rotation</span>
+              <button id="bone-reset-rotation" class="bone-reset" type="button">Reset</button>
+            </div>
+            <label class="rotation-row">
+              <span>X</span>
+              <input class="bone-rotation-range" data-axis="x" type="range" min="-180" max="180" step="0.1" value="0" />
+              <input class="bone-rotation-number" data-axis="x" type="number" min="-180" max="180" step="0.1" value="0" aria-label="Rotation X degrees" />
+            </label>
+            <label class="rotation-row">
+              <span>Y</span>
+              <input class="bone-rotation-range" data-axis="y" type="range" min="-180" max="180" step="0.1" value="0" />
+              <input class="bone-rotation-number" data-axis="y" type="number" min="-180" max="180" step="0.1" value="0" aria-label="Rotation Y degrees" />
+            </label>
+            <label class="rotation-row">
+              <span>Z</span>
+              <input class="bone-rotation-range" data-axis="z" type="range" min="-180" max="180" step="0.1" value="0" />
+              <input class="bone-rotation-number" data-axis="z" type="number" min="-180" max="180" step="0.1" value="0" aria-label="Rotation Z degrees" />
+            </label>
+          </fieldset>
+
+          <div class="rig-list-header">
+            <span>Bones</span>
+            <output id="rig-count">0</output>
+          </div>
+          <div id="bone-list" class="bone-list" aria-label="Bone list"></div>
+          <p id="bone-empty" class="empty-note" hidden>No bones found for this view.</p>
+        </section>
+      </aside>
+
+      <main class="viewport-shell" aria-label="Avatar preview">
+        <div id="viewport"></div>
+        <div id="load-progress" class="progress-line" hidden></div>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,69 @@
+display {
+    display: block;
+    border: 10px dashed red;
+}
+message {
+    display: block;
+    border: 10px dashed blue;
+}
+user {
+    display: block;
+    background: lightblue;
+}
+system {
+    display: block;
+    background: pink;
+}
+thinking {
+    display: block;
+    background: yellow;
+}
+assistant {
+    display: block;
+    background: lightgreen;
+}
+body {
+    margin: 0;
+    xborder: 0;
+    border: 10px solid green;
+    padding: 0;
+}
+.container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+.header {
+    display: flex;
+    height: auto; /* Or set a fixed height if needed */
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background: lightgray;
+}
+.footer {
+    display: flex;
+    height: auto; /* Or set a fixed height if needed */
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+    background: lightgray;
+}
+.display {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    flex-direction: column-reverse;
+    bottom: 0;
+}
+button {
+    flex-shrink: 1;
+    margin-left:  10px;
+    margin-right: 10px;
+}
+.input {
+    flex-grow:    2;
+    margin-bottom: 4px;
+    min-height: 3.3rem; /* 3 lines * 1.1 fudge_factor */
+    width: 100%;
+}

@@ -1,0 +1,12 @@
+pubsub: uv run pubsubhub
+
+#dbs6: NAME=dbs6   uv run -m memoriesdb.services.dbs6
+dbs6: NAME=dbs6   uv run -m aif.agents.dbs6
+
+llm6:            NAME=llm6   uv run -m aif.agents.llm8
+aud:       LOG_LEVEL=WARNING uv run -m aif.agents.aud_meloyelo
+vrec:      LOG_LEVEL=INFO    uv run -m aif.agents.voicerec
+sup:       SUP_DEBUG=0 LOG_LEVEL=INFO uv run -m aif.agents.sup
+#your_eyes:                           uv run -m aif.agents.your_eyes
+#web:       HOST=0.0.0.0 PORT=1212 uv run -m aif.lib.web
+isalive:   LOG_LEVEL=WARNING uv run -m aif.clients.isalive

@@ -1,0 +1,10 @@
+*.egg-info
+*.lock
+dist
+__pycache__
+.venv
+
+*~
+.*~
+\#*\#
+.\#*

@@ -1,0 +1,50 @@
+<link rel="stylesheet" href="style.css">
+<script>
+// Check if user is logged in, redirect to login if not
+async function checkAuth() {
+    const container = document.getElementById('container');
+    try {
+        const response = await fetch('/auth/status');
+        const data = await response.json();
+        if (!data.logged_in) {
+            location.href = '/login.html';
+            return;
+        }
+        globalThis.__authStatus = data;
+        if (globalThis.app) globalThis.app.authStatus = data;
+        if (container) container.style.display = '';
+        app.connect();
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        location.href = '/login.html';
+    }
+}
+window.addEventListener('DOMContentLoaded', checkAuth);
+</script>
+<container class="container" id="container" style="display:none;">
+  <header class="header" id="header">
+    <div id="ws-status">Connecting...</div>
+    <button onclick="app.connect()">Reconnect</button>
+    <button onclick="app.listConvos()">List Conversations</button>
+    <button onclick="location='/status.html'">View Status</button>
+    <button onclick="app.newConvo()">New Conversation</button>
+    <button onclick="app.deleteCurrentConvo()">Delete Current Conversation</button>
+    <button onclick="location='.'">Refresh</button>
+    <button onclick="app.top()">Top</button>
+    <button onclick="app.bot()">Bottom</button>
+  </header>
+  <div class="display" id="display">
+  </div>
+  <footer class="footer" id="footer">
+    <label>
+      <select id="role">
+	<option value="user"  >&nbsp;&nbsp;User:</option>
+	<option value="system">System:</option>
+      </select>
+    </label>
+    <textarea id="input" class="input" autofocus
+	      placeholder="Type Input Here..."></textarea>
+  </footer>
+</container>
+<script src="wsapp.js"></script>
+<script src="app.js"></script>

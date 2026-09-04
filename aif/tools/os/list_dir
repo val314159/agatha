@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+import json
+import os
+import sys
+
+
+def read_payload():
+    raw = sys.stdin.read().strip()
+    return json.loads(raw) if raw else {}
+
+
+def dump(body):
+    return json.dumps(body, indent=2) + "\n"
+
+
+def main():
+    try:
+        payload = read_payload()
+        path = payload.get("path", ".")
+        recursive = bool(payload.get("recursive", False))
+        hidden = bool(payload.get("hidden", False))
+        path = os.path.abspath(path)
+        items = []
+        if recursive:
+            for root, dirs, files in os.walk(path):
+                if not hidden:
+                    dirs[:] = [d for d in dirs if not d.startswith(".")]
+                    files = [f for f in files if not f.startswith(".")]
+                for d in dirs:
+                    items.append({"path": os.path.join(root, d), "type": "dir"})
+                for f in files:
+                    items.append({"path": os.path.join(root, f), "type": "file"})
+        else:
+            for name in sorted(os.listdir(path)):
+                if not hidden and name.startswith("."):
+                    continue
+                full = os.path.join(path, name)
+                items.append({"path": full, "type": "dir" if os.path.isdir(full) else "file"})
+        sys.stdout.write(dump({"path": path, "items": items}))
+    except Exception as e:
+        print(e, file=sys.stderr)
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

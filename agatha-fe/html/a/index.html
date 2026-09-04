@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agatha the Avatar</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.2/dist/full.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="layout-portrait" style="background: linear-gradient(135deg, #1a6b30, #00cc66, #1a6b30);">
+  <div id="auth-gate" class="fixed inset-0 z-[9999] flex items-center justify-center px-6 bg-black/45 backdrop-blur-sm">
+    <div class="border border-white/20 rounded-xl px-8 py-6 text-center text-white shadow-2xl max-w-md w-full bg-black/30">
+      <div class="loading loading-spinner loading-lg mb-4"></div>
+      <h1 class="text-xl font-semibold">Authorizing...</h1>
+      <p class="text-sm text-white/80 mt-2">Checking session and preparing Agatha</p>
+    </div>
+  </div>
+  <div id="main-container">
+    <div id="app-surface" aria-label="Results surface">
+      <iframe id="surface-frame" title="Surface app" src="/todo" tabindex="0"></iframe>
+    </div>
+    <div id="history-container" data-theme="dark">
+      <h3 class="text-lg font-bold">Conversation History AV2</h3>
+      <textarea style="z-index:999" id="text-input"></textarea>
+      <ul id="history-list"></ul>
+    </div>
+    <div id="avatar-container" class="rounded-box shadow-xl"></div>
+    <div class="controls-container flex flex-col gap-2 items-center p-2">
+      <button id="ptt-button" class="btn btn-sm btn-info w-full h-12 min-h-12">Hold To Talk</button>
+      <!-- Layout and model selection with more compact styling -->
+      <div class="w-full flex flex-col gap-1">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center">
+            <label class="label py-0 pr-1"><span class="label-text text-white font-medium text-xs">Layout</span></label>
+            <select id="layout-select" class="select select-bordered select-xs bg-slate-700 text-white h-7 min-h-7">
+              <option value="portrait">Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-1">
+            <button id="orient-surface" class="btn btn-xs btn-ghost h-7 min-h-7">Orient</button>
+            <button id="toggle-history" class="btn btn-xs btn-ghost h-7 min-h-7">Hide History</button>
+            <button id="clear-history" class="btn btn-xs btn-error h-7 min-h-7 flex items-center gap-1">🗑️ Clear</button>
+          </div>
+        </div>
+        <div class="flex gap-1 w-full">
+          <button id="load-agatha" class="btn btn-primary btn-xs flex-1 h-7 min-h-7">Load Agatha</button>
+          <button id="load-constraint" class="btn btn-secondary btn-xs flex-1 h-7 min-h-7">Load Twist</button>
+          <button id="load-blockman" class="btn btn-accent btn-xs flex-1 h-7 min-h-7">Block Man</button>
+        </div>
+      </div>      
+      <div class="flex items-center gap-2">
+        <div id="audio-status-indicator" class="w-3 h-3 rounded-sm bg-yellow-400 border border-yellow-700"></div>
+        <button id="arm-button" autofocus>Arm Audio</button>
+        <div id="ws-status-indicator" class="w-3 h-3 rounded-sm bg-yellow-400 border border-yellow-700"></div>
+        <button id="mute-button" class="btn btn-xs btn-warning">Mute</button>
+      </div>
+      <div class="w-full flex items-center justify-between rounded-lg border border-white/15 bg-black/20 px-3 py-2 text-xs text-white">
+        <span class="font-medium uppercase tracking-wide text-white/70">Convo Mode</span>
+        <div class="flex items-center gap-2">
+          <button id="barge-toggle" title="Toggle barge-in (interrupt assistant)" class="rounded-md border px-2 py-1 font-semibold uppercase tracking-wide transition-colors hover:bg-white/10">barge</button>
+          <button id="convo-mode-indicator" title="Click to switch convo mode" class="rounded-md border border-amber-400/40 bg-amber-400/10 px-2 py-1 font-semibold uppercase tracking-wide text-amber-200 transition-colors hover:bg-white/10">idle</button>
+        </div>
+      </div>
+      <div id="runtime-state-strip" class="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-[10px] font-mono uppercase tracking-wide text-white">
+        <div class="grid grid-cols-2 gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-white/55">PTT</span>
+            <span id="state-ptt" class="rounded border border-slate-400/40 bg-slate-400/10 px-1.5 py-0.5 text-slate-200">up</span>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-white/55">Voice</span>
+            <span id="state-voice" class="rounded border border-slate-400/40 bg-slate-400/10 px-1.5 py-0.5 text-slate-200">idle</span>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-white/55">Backend</span>
+            <span id="state-backend" class="max-w-[11rem] truncate rounded border border-slate-400/40 bg-slate-400/10 px-1.5 py-0.5 text-slate-200">idle</span>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-white/55">Audio</span>
+            <span id="state-audio" class="rounded border border-slate-400/40 bg-slate-400/10 px-1.5 py-0.5 text-slate-200">idle</span>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-white/55">Turn</span>
+            <span id="state-turn" class="max-w-[11rem] truncate rounded border border-slate-400/40 bg-slate-400/10 px-1.5 py-0.5 text-slate-200">none</span>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-white/55">Convo</span>
+            <span id="state-convo" class="rounded border border-slate-400/40 bg-slate-400/10 px-1.5 py-0.5 text-slate-200">active</span>
+          </div>
+        </div>
+      </div>
+      <div class="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-xs text-white">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="font-medium uppercase tracking-wide text-white/70">Debug Feed</span>
+          <button id="debug-feed-clear" class="btn btn-xs btn-ghost min-h-0 h-6 px-2 text-[10px] text-white/70">Clear</button>
+        </div>
+        <div id="debug-feed" class="max-h-28 overflow-y-auto font-mono text-[10px] leading-4 text-white/80"></div>
+      </div>
+      <audio id="audio" controls>
+        <source src="ding-36029.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+      <script>
+        (() => {
+          const armButton = document.getElementById('arm-button');
+          const audioIndicator = document.getElementById('audio-status-indicator');
+          const wsIndicator = document.getElementById('ws-status-indicator');
+
+          const applyStatusColor = (el, prefix, color) => {
+            if (!el) return;
+            el.classList.remove(
+              'bg-yellow-400','bg-red-500','bg-green-500','bg-blue-500',
+              'border-yellow-700','border-red-700','border-green-700','border-blue-700'
+            );
+            if (color === 'yellow') el.classList.add('bg-yellow-400','border-yellow-700');
+            else if (color === 'red') el.classList.add('bg-red-500','border-red-700');
+            else if (color === 'green') el.classList.add('bg-green-500','border-green-700');
+            else if (color === 'blue') el.classList.add('bg-blue-500','border-blue-700');
+          };
+
+          window.setAudioStatus = (color) => applyStatusColor(audioIndicator, 'AUDIO_STATUS:', color);
+          window.setWsStatus = (color) => applyStatusColor(wsIndicator, 'WS_STATUS:', color);
+
+          window.setAudioStatus('yellow');
+          window.setWsStatus('yellow');
+
+          armButton?.addEventListener('click', () => {
+            console.log('[UI] Arm audio clicked – playing ding');
+            new Audio('ding-36029.mp3').play().then(() => {
+              window.setAudioStatus('green');
+            }).catch((err) => {
+              console.warn('Arm audio play failed', err);
+              window.setAudioStatus('red');
+            });
+          });
+        })();
+        const muteButton = document.getElementById('mute-button');
+        muteButton?.addEventListener('click', () => {
+          console.warn('[UI] Mute button not wired yet');
+        });
+      </script>
+      <!-- Dance animation buttons -->
+      <div class="w-full flex flex-col gap-1">
+        <div class="text-xs text-white font-medium mb-1">Procedural Dances</div>
+        <div class="grid grid-cols-3 gap-1 w-full">
+          <button id="dance-rumba" class="btn btn-xs btn-accent h-7 min-h-7">Rumba</button>
+          <button id="dance-texting" class="btn btn-xs btn-accent h-7 min-h-7">Texting</button>
+          <button id="dance-salute" class="btn btn-xs btn-accent h-7 min-h-7">Salute</button>
+        </div>
+        <div class="grid grid-cols-3 gap-1 w-full">
+          <button id="dance-silly" class="btn btn-xs btn-accent h-7 min-h-7">Silly</button>
+          <button id="dance-stretch" class="btn btn-xs btn-accent h-7 min-h-7">Arm Stretch</button>
+          <button id="dance-dying" class="btn btn-xs btn-accent h-7 min-h-7">Dying</button>
+        </div>
+        <button id="stop-dance" class="btn btn-xs btn-outline h-7 min-h-7 w-full">Stop Animation</button>
+      </div>
+      <!-- Keyframe Dance Tests -->
+      <div class="w-full flex flex-col gap-1">
+        <div class="text-xs text-white font-medium mb-1">Keyframe Dance Tests</div>
+        <div class="grid grid-cols-3 gap-1 w-full">
+          <button id="keyframe-kpop" class="btn btn-xs btn-success h-7 min-h-7">K-pop Point</button>
+          <button id="keyframe-groove" class="btn btn-xs btn-success h-7 min-h-7">Basic Groove</button>
+          <button id="keyframe-hiphop" class="btn btn-xs btn-success h-7 min-h-7">Hip Hop</button>
+        </div>
+        <div class="grid grid-cols-3 gap-1 w-full">
+          <button id="keyframe-salsa" class="btn btn-xs btn-success h-7 min-h-7">Salsa</button>
+          <button id="keyframe-shoulder" class="btn btn-xs btn-success h-7 min-h-7">K-pop Shoulder</button>
+          <button id="keyframe-armwave" class="btn btn-xs btn-success h-7 min-h-7">K-pop Arm Wave</button>
+        </div>
+        <div class="grid grid-cols-2 gap-1 w-full">
+          <button id="reset-pose" class="btn btn-xs btn-warning h-7 min-h-7">Reset Pose</button>
+          <button id="stop-keyframe" class="btn btn-xs btn-outline h-7 min-h-7">Stop Keyframe</button>
+        </div>
+      </div>
+      <!-- Simple Procedural Test -->
+      <div class="w-full flex flex-col gap-1">
+        <div class="text-xs text-white font-medium mb-1">Procedural Test</div>
+        <button id="toggle-head-turn" class="btn btn-xs btn-primary h-7 min-h-7 w-full">Toggle Head Turn</button>
+      </div>
+      <!-- Expression buttons in a grid -->
+      <div id="expression-buttons" class="grid grid-cols-3 gap-1 w-full">
+        <button class="btn btn-xs btn-ghost h-7 min-h-7" data-expression="happy">Happy</button>
+        <button class="btn btn-xs btn-ghost h-7 min-h-7" data-expression="angry">Angry</button>
+        <button class="btn btn-xs btn-ghost h-7 min-h-7" data-expression="sad">Sad</button>
+        <button class="btn btn-xs btn-ghost h-7 min-h-7" data-expression="relaxed">Relaxed</button>
+        <button class="btn btn-xs btn-ghost h-7 min-h-7" data-expression="surprised">Surprised</button>
+        <button class="btn btn-xs btn-ghost h-7 min-h-7" data-expression="neutral">Neutral</button>
+      </div>
+      <!-- Text input and voice controls -->
+      <div class="w-full flex flex-col gap-1 mt-1">
+        <!-- Wrap textarea and button in a flex container -->
+        <div class="flex items-end gap-1 w-full">
+          <textarea id="tts-input" class="textarea textarea-bordered flex-grow bg-slate-700 text-white text-sm p-2" rows="2" placeholder="Type text and press Enter..."></textarea>
+          <button id="speak-button" class="btn btn-sm btn-primary h-auto min-h-[4rem]">Speak</button>
+        </div>
+        <div class="flex items-center w-full gap-1">
+          <label class="label py-0 pr-1"><span class="label-text text-white font-medium text-xs">Voice</span></label>
+          <select id="voice-select" class="select select-bordered select-xs bg-slate-700 text-white flex-1 h-7 min-h-7"></select>
+        </div>
+        <div class="flex items-center w-full gap-1">
+          <label class="label py-0 pr-1"><span class="label-text text-white font-medium text-xs">Pitch</span></label>
+          <input id="pitch-slider" type="range" min="0.5" max="2" step="0.01" value="1" class="range range-xs flex-1">
+          <span id="pitch-value" class="text-white text-xs w-8 text-right">1.00</span>
+        </div>
+        
+        <div class="flex items-center w-full gap-1">
+          <label class="label py-0 pr-1"><span class="label-text text-white font-medium text-xs">Rate</span></label>
+          <input id="rate-slider" type="range" min="0.5" max="2" step="0.01" value="1" class="range range-xs flex-1">
+          <span id="rate-value" class="text-white text-xs w-8 text-right">1.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+        "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js",
+        "@pixiv/three-vrm-core": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm-core@3/lib/three-vrm-core.module.js"
+      }
+    }
+  </script>
+  <script type="module">
+//    (async () => {
+      console.log('Loading application...');
+      //import { Application } from './application.js';
+      const mod = await import ('./application.js?t=' + Date.now() );
+      console.log('Application loaded', mod);
+      //    const Application = await import ('./application.js?t=' + Date.now() );
+      // Instantiate the application and assign to a global variable
+      try{
+        window._ = new mod.Application();
+      } catch (e) {
+        console.error('Failed to instantiate application:', e);
+      }
+      console.log('Application instantiated');
+//    })();
+  </script>
+  <!-- Keyboard Shortcut Modal -->
+  <dialog id="shortcut-modal" class="modal">
+    <div class="modal-box bg-gradient-to-br from-gray-800 to-gray-900 text-white border border-gray-700 shadow-xl rounded-lg">
+      <form method="dialog">
+        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 text-gray-400 hover:text-white hover:bg-gray-700">✕</button>
+      </form>
+      <h3 class="font-bold text-xl mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Keyboard Shortcuts</h3>
+      <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <div>
+          <p class="font-semibold mb-1 text-cyan-400">Navigation & General:</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">←</kbd> / <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">→</kbd>: Navigate Controls</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Esc</kbd>: Remove Focus</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Alt</kbd> + <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">`</kbd> or <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">O</kbd>: Clear History</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Shift</kbd> (Left) + <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Alt</kbd>: Show This Help</p>
+        </div>
+        <div>
+          <p class="font-semibold mb-1 text-purple-400">Avatar & Voice:</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Alt</kbd> + <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">P/L</kbd>: Portrait/Landscape</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Alt</kbd> + <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Q/W/E</kbd>: Load Agatha/Twist/Block</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Alt</kbd> + <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">A/S/D</kbd>: Happy/Angry/Sad</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Alt</kbd> + <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Z/X/C</kbd>: Relax/Surprise/Neutral</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Alt</kbd> + <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">R/T/Y</kbd>: Rumba/Texting/Salute</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Alt</kbd> + <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">F/G/H</kbd>: Say Hello/More/Test</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Hold</kbd> <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Ctrl</kbd> + <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">M</kbd>: Push To Talk</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Ctrl</kbd> + <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">,</kbd>: Continuous Mic Mode</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">Alt</kbd> + <kbd class="kbd kbd-sm bg-gray-600 text-gray-100">V/B/N</kbd>: Focus Voice/Pitch/Rate</p>
+          <p class="text-white"><kbd class="kbd kbd-sm bg-gray-600 text-gray-100">[a-z0-9]</kbd> (No focus): Type in TTS Input</p>
+        </div>
+      </div>
+      <div class="modal-action mt-4">
+        <form method="dialog">
+          <button class="btn btn-sm bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 border-none text-white">Got it!</button>
+        </form>
+      </div>
+    </div>
+    <!-- Click outside to close -->
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+  </dialog>
+  <!-- Shell Modal -->
+  <dialog id="shell-modal" class="modal">
+    <div class="modal-box w-11/12 max-w-5xl bg-gray-900 text-gray-200 border border-gray-700 rounded-lg shadow-lg">
+      <form method="dialog">
+        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 text-gray-400 hover:text-white">✕</button>
+      </form>
+      <h3 class="font-bold text-lg text-cyan-400">Shell</h3>
+      <div class="py-4" id="shell-content">
+        <!-- Shell content will be loaded here -->
+        <p>Loading shell...</p>
+      </div>
+      <div class="modal-action">
+        <form method="dialog">
+          <button class="btn btn-sm btn-outline btn-accent">Close</button>
+        </form>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
+</body>
+</html>

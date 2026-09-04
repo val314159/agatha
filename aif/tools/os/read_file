@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+import json
+import os
+import sys
+
+
+def read_payload():
+    raw = sys.stdin.read().strip()
+    return json.loads(raw) if raw else {}
+
+
+def dump(body):
+    return json.dumps(body, indent=2) + "\n"
+
+
+def main():
+    try:
+        payload = read_payload()
+        path = payload.get("path")
+        if not path:
+            raise ValueError("read_file requires path")
+        start = int(payload.get("start", 1))
+        end = payload.get("end")
+        end = int(end) if end is not None else None
+        with open(path) as f:
+            lines = f.readlines()
+        if start < 1:
+            start = 1
+        chunk = lines[start - 1:end]
+        sys.stdout.write(
+            dump(
+                {
+                    "path": os.path.abspath(path),
+                    "start": start,
+                    "end": start + len(chunk) - 1 if chunk else start - 1,
+                    "text": "".join(chunk),
+                }
+            )
+        )
+    except Exception as e:
+        print(e, file=sys.stderr)
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

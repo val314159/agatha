@@ -1,0 +1,40 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background-color: #f8f9fa;
+}
+
+#feed-container,
+#snapshot,
+#snap-btn {
+  position: absolute;
+}
+
+/* Style the video feed element (bottom-right corner) */
+#feed-container {
+  bottom: 0;
+  right: 0;
+}
+
+/* Style the snapshot image element (top-left corner) */
+#snapshot {
+  top: 0;
+  left: 0;
+  border-radius: 5px;
+}
+
+/* Style the snap button (center of the page) */
+#snap-btn {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+

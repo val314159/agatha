@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+import sys
+
+from task_store import connect, create_task, dump, read_payload
+
+
+def main():
+    try:
+        payload = read_payload()
+        with connect() as con:
+            task_id = create_task(con, payload)
+        sys.stdout.write(dump({"id": task_id}))
+    except Exception as e:
+        print(e, file=sys.stderr)
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

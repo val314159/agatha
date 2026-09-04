@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AV Project Class Diagram</title>
+    <style>body { font-family: sans-serif; }</style>
+</head>
+<body>
+    <h1>AV Project Class Diagram (/public/y/)</h1>
+    <pre class="mermaid">
+classDiagram
+    class Application {
+        +speak_phrase(text)
+        +constructor()
+        +install_event_listeners()
+        +onload()
+        +apply_url_parameters()
+        +set_layout(layout)
+        -lip_sync : LipSyncState
+        -scene_renderer : SceneRenderer
+        -message_history : MessageHistory
+        -blinker : Blinker
+        -voice_mgr : VoiceMgr
+        -clock
+        -current_vrm
+        -avatar_bones
+    }
+
+    class LipSyncState {
+        +constructor()
+        +speak_phrase(app, text)
+        -active
+        -start_time
+        -end_time
+    }
+
+    class SceneRenderer {
+        +constructor(container)
+        +update()
+        +load_vrm_model(app, url)
+        +load_fbx(url, app)
+        +unload_fbx()
+        +set_expression(vrm, expression_name)
+        -scene
+        -camera
+        -renderer
+        -controls
+        -current_mixer
+        -idle_animation_state
+        -vrm_loader
+        +mixamo_vrm_rig_map
+    }
+
+    class MessageHistory {
+        +constructor()
+        +clear()
+        +load()
+        +save()
+        +add(text, is_user)
+        +update_display()
+        -history
+    }
+
+    class Blinker {
+        +constructor()
+        +update(now, current_vrm)
+        +apply_blink_to_vrm(current_vrm, blink_value)
+        -is_blinking
+        -next_blink_time
+    }
+
+    class VoiceMgr {
+        +constructor()
+        +install(app)
+        +populate_voices()
+        +get_selected_voice()
+        -voices
+        -voice_select
+        -pitch_slider
+        -rate_slider
+        -tts_input
+    }
+
+    class TextToSpeech {
+        +constructor(voiceMgr, lipSyncState, messageHistory)
+        +speak(text, isUserInput)
+        -voiceMgr : VoiceMgr
+        -lipSyncState : LipSyncState
+        -messageHistory : MessageHistory
+    }
+
+    class UrlParams {
+        &lt;&lt;Object&gt;&gt;
+        +get_initial_avatar_model_path()
+        +get_query_param(name)
+        +update_url_param(name, value)
+    }
+
+    class AnimateModule {
+        &lt;&lt;Module&gt;&gt;
+        +animate_init(app)
+        +animate_idle_states(app)
+        +animate_lip_sync(app)
+        +animate(app)
+    }
+
+    class ExternalLibs {
+        &lt;&lt;Library&gt;&gt;
+        +ThreeJS
+        +PixivThreeVRM
+        +BrowserAPIs
+    }
+
+    Application "1" *-- "1" LipSyncState : contains
+    Application "1" *-- "1" SceneRenderer : contains
+    Application "1" *-- "1" MessageHistory : contains
+    Application "1" *-- "1" Blinker : contains
+    Application "1" *-- "1" VoiceMgr : contains
+    Application "1" *-- "1" TextToSpeech : contains
+    Application ..> UrlParams : uses
+    Application ..> AnimateModule : uses
+
+    TextToSpeech ..> VoiceMgr : uses
+    TextToSpeech ..> LipSyncState : uses
+    TextToSpeech ..> MessageHistory : uses
+
+    SceneRenderer ..> ExternalLibs : uses
+    SceneRenderer ..> Application : receives
+
+    LipSyncState ..> Application : uses
+    LipSyncState ..> ExternalLibs : uses
+
+    VoiceMgr ..> Application : uses
+    VoiceMgr ..> UrlParams : uses
+    VoiceMgr ..> ExternalLibs : uses
+
+    Blinker ..> Application : uses
+
+    MessageHistory ..> ExternalLibs : uses
+
+    AnimateModule ..> Application : uses
+    AnimateModule ..> SceneRenderer : uses
+    AnimateModule ..> LipSyncState : uses
+    AnimateModule ..> Blinker : uses
+    AnimateModule ..> ExternalLibs : uses
+
+    UrlParams ..> ExternalLibs : uses
+    </pre>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+</html>
