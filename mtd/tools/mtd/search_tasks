@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+import sys
+
+from mtd.lib.task_store import connect, dump, read_payload, search_tasks
+
+
+def main():
+    try:
+        payload = read_payload()
+        with connect() as con:
+            tasks = search_tasks(con, payload.get("query"), payload.get("states"))
+        sys.stdout.write(dump(tasks))
+    except Exception as e:
+        print(e, file=sys.stderr)
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

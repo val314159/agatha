@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+import sys
+
+from mtd.lib.task_store import connect, read_payload, update_task
+
+
+def main():
+    try:
+        payload = read_payload()
+        with connect() as con:
+            update_task(con, payload)
+    except Exception as e:
+        print(e, file=sys.stderr)
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

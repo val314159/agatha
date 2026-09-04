@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+import json
+import os
+import sys
+
+
+def read_payload():
+    raw = sys.stdin.read().strip()
+    return json.loads(raw) if raw else {}
+
+
+def dump(body):
+    return json.dumps(body, indent=2) + "\n"
+
+
+def main():
+    try:
+        payload = read_payload()
+        path = payload.get("path")
+        if not path:
+            raise ValueError("mkdir requires path")
+        parents = bool(payload.get("parents", True))
+        exist_ok = bool(payload.get("exist_ok", True))
+        if parents:
+            os.makedirs(path, exist_ok=exist_ok)
+        else:
+            os.mkdir(path)
+        sys.stdout.write(dump({"path": os.path.abspath(path), "status": "ok"}))
+    except Exception as e:
+        print(e, file=sys.stderr)
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()
