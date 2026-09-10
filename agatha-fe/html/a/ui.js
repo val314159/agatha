@@ -405,26 +405,6 @@ export class UI {
             toggleButton.textContent = hidden ? 'Show History' : 'Hide History';
             toggleButton.setAttribute('aria-pressed', hidden ? 'true' : 'false');
         });
-        addButtonListener('orient-surface', () => {
-            const orientButton = document.getElementById('orient-surface');
-            const surfaceFrame = document.getElementById('surface-frame');
-            const oriented = document.body.classList.toggle('surface-oriented');
-
-            if (this.app.sceneRenderer?.controls) {
-                this.app.sceneRenderer.controls.enabled = !oriented;
-            }
-
-            if (orientButton) {
-                orientButton.textContent = oriented ? 'Agatha' : 'Orient';
-                orientButton.setAttribute('aria-pressed', oriented ? 'true' : 'false');
-            }
-
-            if (oriented && surfaceFrame) {
-                surfaceFrame.focus();
-            } else {
-                this.removeFocus();
-            }
-        });
 
         // --- Expression Buttons ---
         const expressionButtonContainer = document.getElementById('expression-buttons');
