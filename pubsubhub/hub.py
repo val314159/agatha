@@ -497,6 +497,7 @@ def _():
 @app.get('/')
 def _():
     add_no_cache_headers(response.headers)
+    return redirect('/a/')
     return redirect('/chat.html')
 
 @app.get('<path:path>')

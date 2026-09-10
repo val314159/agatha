@@ -11,9 +11,10 @@
 <body class="layout-portrait" style="background: linear-gradient(135deg, #1a6b30, #00cc66, #1a6b30);">
   <div id="auth-gate" class="fixed inset-0 z-[9999] flex items-center justify-center px-6 bg-black/45 backdrop-blur-sm">
     <div class="border border-white/20 rounded-xl px-8 py-6 text-center text-white shadow-2xl max-w-md w-full bg-black/30">
-      <div class="loading loading-spinner loading-lg mb-4"></div>
-      <h1 class="text-xl font-semibold">Authorizing...</h1>
-      <p class="text-sm text-white/80 mt-2">Checking session and preparing Agatha</p>
+      <div id="auth-spinner" class="loading loading-spinner loading-lg mb-4"></div>
+      <h1 id="auth-title" class="text-xl font-semibold">Authorizing...</h1>
+      <p id="auth-message" class="text-sm text-white/80 mt-2" role="status">Checking session and preparing Agatha</p>
+      <button id="auth-retry" class="btn btn-sm mt-4" hidden>Try again</button>
     </div>
   </div>
   <div id="main-container">
@@ -219,22 +220,7 @@
       }
     }
   </script>
-  <script type="module">
-//    (async () => {
-      console.log('Loading application...');
-      //import { Application } from './application.js';
-      const mod = await import ('./application.js?t=' + Date.now() );
-      console.log('Application loaded', mod);
-      //    const Application = await import ('./application.js?t=' + Date.now() );
-      // Instantiate the application and assign to a global variable
-      try{
-        window._ = new mod.Application();
-      } catch (e) {
-        console.error('Failed to instantiate application:', e);
-      }
-      console.log('Application instantiated');
-//    })();
-  </script>
+  <script type="module" src="./startup.js"></script>
   <!-- Keyboard Shortcut Modal -->
   <dialog id="shortcut-modal" class="modal">
     <div class="modal-box bg-gradient-to-br from-gray-800 to-gray-900 text-white border border-gray-700 shadow-xl rounded-lg">
