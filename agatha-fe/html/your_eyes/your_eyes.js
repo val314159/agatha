@@ -68,9 +68,7 @@ function your_eyes(videoElement, snapshot, snapBtn, interval) {
 		
 		formData.append('image', blob, filename)
 
-		PREFIX = 'http://localhost:5002'
-		
-		fetch ( PREFIX + '/uploads', {
+		fetch ( '/uploads', {
 		    method: 'POST',
 		    body: formData,
 		} ) .then(response => response.json())
@@ -78,7 +76,7 @@ function your_eyes(videoElement, snapshot, snapBtn, interval) {
 		    .catch(error => {
 			console.error('Error uploading snapshot:', error)
 		    })
-	    })
+	    }, 'image/jpeg', 0.85)
 
 	    snapshot.src = canvas.toDataURL('image/jpeg', 0.1)
 	    snapshot.style.display = 'block'

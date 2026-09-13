@@ -74,8 +74,7 @@ AUDIO_DIR = os.path.realpath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)), 'audio'))
 print("AUDIO_DIR", AUDIO_DIR)
 
-VIDEO_DIR = os.path.realpath(os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'uploads'))
+VIDEO_DIR = os.path.realpath(os.getenv('UPLOAD_DIR', './uploads'))
 print("VIDEO_DIR", VIDEO_DIR)
 
 def xcreate_audio_directory():

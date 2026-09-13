@@ -14,6 +14,8 @@ Options:
   -r --root=<path>              Static asset root. Falls back to
                                 PUBSUBHUB_ROOT, ROOT, ./public, then packaged
                                 assets.
+  -u --upload-dir=<path>        Directory for POST /uploads files. Falls back to
+                                PUBSUBHUB_UPLOAD_DIR, UPLOAD_DIR, then ./uploads.
   --auth-plugin=<module>        Auth backend: memory, none, or a Python module
                                 with validate_session/get_auth_status/logout/
                                 login/register functions. Falls back to
@@ -212,21 +214,26 @@ class PubSub(Bottle):
     Channel = dict()
     Sessions = dict()
 
-    def __init__(self, auth=None, public_root=None, internal_secret=None):
+    def __init__(self, auth=None, public_root=None, internal_secret=None,
+                 upload_dir=None):
         super().__init__()
         self.auth = auth or MemoryAuth()
         self.public_root = public_root or default_public_root()
         self.internal_secret = internal_secret or INTERNAL_SECRET
+        self.upload_dir = upload_dir or './uploads'
         self.Channel = {}
         self.Sessions = {}
 
-    def configure(_, auth=None, public_root=None, internal_secret=None):
+    def configure(_, auth=None, public_root=None, internal_secret=None,
+                  upload_dir=None):
         if auth is not None:
             _.__dict__['auth'] = auth
         if public_root is not None:
             _.__dict__['public_root'] = public_root
         if internal_secret is not None:
             _.__dict__['internal_secret'] = internal_secret
+        if upload_dir is not None:
+            _.__dict__['upload_dir'] = upload_dir
 
     def subscribe(_, ws, channels):
         rec = (hex(id(ws)), ws)
@@ -494,6 +501,25 @@ def _():
     add_no_cache_headers(response.headers)
     return redirect('/status.html')
 
+@app.post('/uploads')
+def _():
+    add_no_cache_headers(response.headers)
+    upload = request.files.get('image')
+    if upload is None:
+        response.status = 400
+        return {'status': 'error', 'error': 'missing image field'}
+    filename = os.path.basename(upload.filename or '')
+    if not filename:
+        filename = 'image_%s.jpg' % secrets.token_hex(8)
+    root = request.app.upload_dir
+    os.makedirs(root, exist_ok=True)
+    path = os.path.join(root, filename)
+    upload.save(path, overwrite=True)
+    # Marker file signals the upload is complete for directory watchers.
+    Path(path + '.DUN').touch()
+    logger.info("Saved upload %s", path)
+    return {'status': 'ok', 'filename': filename}
+
 @app.get('/')
 def _():
     add_no_cache_headers(response.headers)
@@ -527,6 +553,11 @@ def main(argv=None):
     )
     root = option_value(args, '--root', 'PUBSUBHUB_ROOT', 'ROOT')
     print("ROOT", root)
+    upload_dir = option_value(
+        args, '--upload-dir', 'PUBSUBHUB_UPLOAD_DIR', 'UPLOAD_DIR',
+        default='./uploads'
+    )
+    print("UPLOAD_DIR", upload_dir)
     auth_plugin = option_value(
         args,
         '--auth-plugin',
@@ -551,6 +582,7 @@ def main(argv=None):
         auth=load_auth_backend(auth_plugin),
         public_root=str(Path(root or default_public_root()).expanduser()),
         internal_secret=internal_secret,
+        upload_dir=str(Path(upload_dir).expanduser().resolve()),
     )
 
     app.run(host=host, port=port)

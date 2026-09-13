@@ -23,7 +23,9 @@
       <textarea style="z-index:999" id="text-input"></textarea>
       <ul id="history-list"></ul>
     </div>
-    <div id="avatar-container" class="rounded-box shadow-xl"></div>
+    <div id="avatar-container" class="rounded-box shadow-xl">
+      <video id="cam-feed" autoplay playsinline muted></video>
+    </div>
     <div class="controls-container flex flex-col gap-2 items-center p-2">
       <button id="ptt-button" class="btn btn-sm btn-info w-full h-12 min-h-12">Hold To Talk</button>
       <!-- Layout and model selection with more compact styling -->
@@ -137,6 +139,19 @@
         muteButton?.addEventListener('click', () => {
           console.warn('[UI] Mute button not wired yet');
         });
+      </script>
+      <script>
+        // Self-view camera feed in the corner of the avatar area.
+        (() => {
+          const cam = document.getElementById('cam-feed');
+          if (!cam || !navigator.mediaDevices?.getUserMedia) return;
+          navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+              cam.srcObject = stream;
+              cam.classList.add('cam-on');
+            })
+            .catch(err => console.warn('[cam] getUserMedia failed', err));
+        })();
       </script>
       <!-- Dance animation buttons -->
       <div class="w-full flex flex-col gap-1">

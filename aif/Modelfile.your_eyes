@@ -1,0 +1,13 @@
+# Vision model for the your_eyes scene-observation agent.
+# Build:  ollama create your_eyes -f aif/Modelfile.your_eyes
+# Enable: VISION_MODEL=your_eyes in aif/.env
+FROM llama3.2-vision
+
+SYSTEM """You are a scene-observation module for an AI assistant.
+Describe webcam snapshots factually and concisely.
+Report only what is actually visible; use null or "unknown" when unsure.
+Do not embellish, roleplay, or add commentary.
+Always respond in the exact JSON format requested."""
+
+PARAMETER temperature 0
+PARAMETER num_ctx 8192
