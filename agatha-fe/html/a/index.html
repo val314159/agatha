@@ -145,12 +145,50 @@
         (() => {
           const cam = document.getElementById('cam-feed');
           if (!cam || !navigator.mediaDevices?.getUserMedia) return;
+
+          const canvas = document.createElement('canvas');
+
+          function takeSnapshot() {
+            if (!cam.srcObject?.active) {
+              console.warn('[cam] no active stream, snapshot skipped');
+              return;
+            }
+            canvas.width = cam.videoWidth;
+            canvas.height = cam.videoHeight;
+            canvas.getContext('2d').drawImage(cam, 0, 0);
+
+            const timestamp = new Date().toISOString().replace(/[\-T\:\.]/g, '');
+            const filename = `image_${timestamp}.jpg`;
+
+            canvas.toBlob(blob => {
+              if (!blob) return;
+              const formData = new FormData();
+              formData.append('timestamp', new Blob([timestamp], { type: 'text/plain' }));
+              formData.append('image', blob, filename);
+              const app = window._;
+              for (const k of ['uuid', 'session_id', 'conversation']) {
+                if (app?.[k]) formData.append(k, app[k]);
+              }
+              fetch('/uploads', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(data => console.log('[cam] uploaded', data))
+                .catch(err => console.error('[cam] upload failed', err));
+            }, 'image/jpeg', 0.85);
+          }
+
           navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
               cam.srcObject = stream;
               cam.classList.add('cam-on');
             })
             .catch(err => console.warn('[cam] getUserMedia failed', err));
+
+          document.addEventListener('keydown', event => {
+            if (event.altKey && !event.ctrlKey && !event.metaKey && event.key === '/') {
+              event.preventDefault();
+              takeSnapshot();
+            }
+          });
         })();
       </script>
       <!-- Dance animation buttons -->
