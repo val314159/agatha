@@ -25,6 +25,7 @@
     </div>
     <div id="avatar-container" class="rounded-box shadow-xl">
       <video id="cam-feed" autoplay playsinline muted></video>
+      <img id="cam-snap" alt="last snapshot">
     </div>
     <div class="controls-container flex flex-col gap-2 items-center p-2">
       <button id="ptt-button" class="btn btn-sm btn-info w-full h-12 min-h-12">Hold To Talk</button>
@@ -156,6 +157,14 @@
             canvas.width = cam.videoWidth;
             canvas.height = cam.videoHeight;
             canvas.getContext('2d').drawImage(cam, 0, 0);
+
+            const snap = document.getElementById('cam-snap');
+            if (snap) {
+              snap.src = canvas.toDataURL('image/jpeg', 0.85);
+              snap.classList.add('snap-on');
+              clearTimeout(snap._hideTimer);
+              snap._hideTimer = setTimeout(() => snap.classList.remove('snap-on'), 15000);
+            }
 
             const timestamp = new Date().toISOString().replace(/[\-T\:\.]/g, '');
             const filename = `image_${timestamp}.jpg`;

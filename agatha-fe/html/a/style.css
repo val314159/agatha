@@ -232,3 +232,23 @@
     #cam-feed.cam-on {
       display: block;
     }
+
+    /* Last-captured snapshot preview, lower-right of avatar area */
+    #cam-snap {
+      position: absolute;
+      right: 0.75rem;
+      bottom: 0.75rem;
+      width: 360px;
+      max-width: 50%;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      transform: scaleX(-1); /* match mirrored self-view */
+      background: #000;
+      display: none;
+      z-index: 5;
+    }
+
+    #cam-snap.snap-on {
+      display: block;
+    }
