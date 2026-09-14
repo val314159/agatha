@@ -16,7 +16,7 @@ def repeat(thunk, exit_on_true=True, delay=0):
     return
 
 
-VISION_MODEL = os.getenv('VISION_MODEL', 'vision')
+VISION_MODEL = os.getenv('VISION_MODEL', 'llama3.2-vision')
 
 ANSI_RE = re.compile(r'\x1b\[[0-9;?]*[A-Za-z]')
 
@@ -29,7 +29,7 @@ PROMPT = (
     'looking_at_camera (boolean or null), wants_to_talk (yes/no/maybe), '
     'engagement_confidence (number 0-1), notable_objects (list of strings).'
 )
-
+PROMPT = 'what is this? '
 
 def analyze_image(path):
     # ollama run detects image paths inside the prompt text, not as
@@ -77,13 +77,41 @@ def main():
         obs.update(type='scene_observation', image_id=fn[:-4])
         print("OBS", obs)
         pub(ws, out_channel, **obs)
+        tell_agatha(image, obs)
         if not KEEP_UPLOADS:
-            for f in (fn, fn[:-4]):
+            for f in (fn, fn[:-4], fn[:-4] + '.json'):
                 try:
                     os.remove(os.path.join(VIDEO_DIR, f))
                 except OSError:
                     pass
         pass
+
+    def tell_agatha(image, obs):
+        # Route the observation through sup-in so it becomes a normal
+        # voice turn: filler -> LLM -> TTS -> avatar.
+        if 'error' in obs:
+            return
+        meta = {}
+        try:
+            meta = orjson.loads(Path(image + '.json').read_bytes())
+        except Exception:
+            pass
+        if not meta.get('session_id'):
+            print("TELL skipped: no session metadata for", image)
+            return
+        desc = obs.get('description') or orjson.dumps(obs).decode()
+        extras = ', '.join(f'{k}={v}' for k, v in obs.items()
+                           if k in ('people_count', 'looking_at_camera',
+                                    'wants_to_talk') and v is not None)
+        if extras:
+            desc += f' ({extras})'
+        content = ('[Camera snapshot] The user just showed you their webcam. '
+                   'You see: ' + desc +
+                   ' Comment on what you see naturally, in a sentence or two.')
+        turn = dict(role='user', content=content, generate_audio=True,
+                    turn_id=str(uuid.uuid4()), **meta)
+        print("TELL", turn)
+        pub(ws, 'sup-in', **turn)
 
     def once():
         current = set(os.listdir(VIDEO_DIR))

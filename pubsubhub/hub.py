@@ -515,6 +515,12 @@ def _():
     os.makedirs(root, exist_ok=True)
     path = os.path.join(root, filename)
     upload.save(path, overwrite=True)
+    # Sidecar carries session metadata for downstream consumers (your_eyes).
+    meta = {k: request.forms.get(k)
+            for k in ('uuid', 'session_id', 'conversation')
+            if request.forms.get(k)}
+    if meta:
+        Path(path + '.json').write_text(json.dumps(meta))
     # Marker file signals the upload is complete for directory watchers.
     Path(path + '.DUN').touch()
     logger.info("Saved upload %s", path)
