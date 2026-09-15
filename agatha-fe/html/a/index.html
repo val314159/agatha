@@ -184,16 +184,31 @@
                 .catch(err => console.error('[cam] upload failed', err));
             }, 'image/jpeg', 0.85);
           }
-
+console.error("CAM STUFF");
           navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
               cam.srcObject = stream;
               cam.classList.add('cam-on');
+              const track = stream.getVideoTracks()[0];
+              const caps = track?.getCapabilities?.() || {};
+              const report = () => {
+                const s = track?.getSettings?.() || {};
+                console.error('[cam] resolution', s.width + 'x' + s.height,
+                            '@' + s.frameRate + 'fps',
+                            '(max ' + caps.width?.max + 'x' + caps.height?.max + ')');
+              };
+              if (caps.width?.max) {
+                track.applyConstraints({ width: caps.width.max, height: caps.height.max })
+                  .then(report)
+                  .catch(err => { console.error('[cam] applyConstraints failed', err); report(); });
+              } else {
+                report();
+              }
             })
-            .catch(err => console.warn('[cam] getUserMedia failed', err));
+            .catch(err => console.error('[cam] getUserMedia failed', err));
 
           document.addEventListener('keydown', event => {
-            if (event.altKey && !event.ctrlKey && !event.metaKey && event.key === '/') {
+            if (event.altKey && !event.ctrlKey && !event.metaKey && event.code === 'Slash') {
               event.preventDefault();
               takeSnapshot();
             }

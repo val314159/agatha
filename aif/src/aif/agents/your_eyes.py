@@ -78,9 +78,20 @@ def main():
 
     seen = set()
 
+    def read_meta(image):
+        try:
+            return orjson.loads(Path(image + '.json').read_bytes())
+        except Exception:
+            return {}
+
     def process(fn):
         image = os.path.join(VIDEO_DIR, fn[:-4])
         print("ANALYZE", image)
+        meta = read_meta(image)
+        if meta.get('session_id'):
+            # "Looking" filler straight to TTS — no LLM, plays instantly.
+            pub(ws, 'aud-in', content="Hmm, let me see...",
+                done=True, turn_id=str(uuid.uuid4()), **meta)
         try:
             obs = analyze_image(image)
         except Exception as e:
@@ -89,7 +100,7 @@ def main():
         obs.update(type='scene_observation', image_id=fn[:-4])
         print("OBS", obs)
         pub(ws, out_channel, **obs)
-        tell_agatha(image, obs)
+        tell_agatha(obs, meta)
         if not KEEP_UPLOADS:
             for f in (fn, fn[:-4], fn[:-4] + '.json'):
                 try:
@@ -98,18 +109,13 @@ def main():
                     pass
         pass
 
-    def tell_agatha(image, obs):
+    def tell_agatha(obs, meta):
         # Route the observation through sup-in so it becomes a normal
         # voice turn: filler -> LLM -> TTS -> avatar.
         if 'error' in obs:
             return
-        meta = {}
-        try:
-            meta = orjson.loads(Path(image + '.json').read_bytes())
-        except Exception:
-            pass
         if not meta.get('session_id'):
-            print("TELL skipped: no session metadata for", image)
+            print("TELL skipped: no session metadata")
             return
         desc = obs.get('description') or orjson.dumps(obs).decode()
         extras = ', '.join(f'{k}={v}' for k, v in obs.items()
