@@ -4,6 +4,7 @@ from aif.lib.logging_setup import setup_logger as _;_(__file__)
 from dataclasses import dataclass, field
 from pidwatcher import PidFileWatcher, write_pid_file, basename
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 #logger.setLevel(logging.ERROR)
@@ -13,6 +14,16 @@ AI_IN_CHANNEL = os.getenv('AI_IN_CHANNEL', 'llm6-in')
 AI_OUT_CHANNEL = os.getenv('AI_OUT_CHANNEL', 'llm6-out')
 IN_CHANNELS = f'sup-in,{AI_OUT_CHANNEL},aud-out,img-out'
 OUT_CHANNEL = 'sup-out'
+
+# "agatha, ask astra to ..." -> divert the turn to the codex-in channel
+# for the astra daemon instead of running a normal LLM turn.
+ASTRA_RE = re.compile(
+    r'^\s*(?:agatha\b[\s,]*)?(?:ask|asked|tell|told|have|get)\s+(?:astra|astro)\b\s*(?:to\s+)?(.+)',
+    re.IGNORECASE | re.DOTALL)
+
+def astra_task(content):
+    m = ASTRA_RE.match(content or '')
+    return m.group(1).strip() if m else None
 
 THINKING_FILLER_DELAY_SECS = float(os.getenv('THINKING_FILLER_DELAY_SECS', '1.75'))
 THINKING_FILLER_FOLLOWUP_DELAY_SECS = float(os.getenv('THINKING_FILLER_FOLLOWUP_DELAY_SECS', '7.0'))
@@ -390,6 +401,11 @@ def main():
             #print(">>>>>>>>> PUB", params)
             if params.get('channel') == 'sup-in':
                 logger.info("SUP IN %s", params)
+                task = astra_task(params.get('content'))
+                if task:
+                    logger.info("ASTRA TASK %s", task)
+                    pub_params(sock, params, channel='codex-in', content=task)
+                    continue
                 in_q.put(params)
                 continue
 

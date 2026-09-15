@@ -8,5 +8,6 @@ aud:       LOG_LEVEL=WARNING uv run -m aif.agents.aud_meloyelo
 vrec:      LOG_LEVEL=INFO    uv run -m aif.agents.voicerec
 sup:       SUP_DEBUG=0 LOG_LEVEL=INFO uv run -m aif.agents.sup
 your_eyes:                            uv run -m aif.agents.your_eyes
+astra:                                uv run -m aif.agents.astra
 #web:       HOST=0.0.0.0 PORT=1212 uv run -m aif.lib.web
 isalive:   LOG_LEVEL=WARNING uv run -m aif.clients.isalive
