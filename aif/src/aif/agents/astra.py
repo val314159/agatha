@@ -7,6 +7,7 @@ stdio, one JSONL message per line), and speaks Astra's reply verbatim
 through aud-in.
 """
 import re
+import html
 
 from aif.lib.wsutil import *
 
@@ -89,7 +90,7 @@ class CodexSession:
 
     def run_task(self, task, speak=None):
         """Submit one turn; stream sentences to speak(text, done) as they
-        complete; return (final_agent_text, error)."""
+        complete; return (final_agent_text, command_outputs, error)."""
         self._call('turn/start', {
             'threadId': self.thread_id,
             'input': [{'type': 'text', 'text': task + VOICE_SUFFIX}],
@@ -100,6 +101,7 @@ class CodexSession:
                               'networkAccess': True},
         })
         deltas = {}
+        outputs = []
         final_text = ''
         buf = ''
         deadline = time.time() + TURN_TIMEOUT
@@ -125,21 +127,43 @@ class CodexSession:
                         speak(sent, False)
             elif method == 'item/completed':
                 item = params.get('item', {})
+                print("ITEM", item.get('type'),
+                      (item.get('command') or '')[:80])
+                if item.get('type') in ('commandExecution', 'fileChange'):
+                    print("CMDITEM", json.dumps(item)[:600])
                 if item.get('type') == 'agentMessage':
                     final_text = item.get('text', '')
+                elif item.get('type') == 'commandExecution':
+                    o = item.get('aggregatedOutput')
+                    cmd = item.get('command') or ''
+                    m = re.match(r"/bin/\w+ -l?c ['\"](.*)['\"]$",
+                                 cmd, re.S)
+                    if m:
+                        cmd = m.group(1)
+                    if cmd:
+                        outputs.append('$ ' + cmd)
+                    if o:
+                        outputs.append(o)
+                elif item.get('type') == 'fileChange':
+                    for ch in item.get('changes') or []:
+                        d = ch.get('diff')
+                        if d:
+                            outputs.append(
+                                '# ' + (ch.get('path') or 'file') +
+                                '\n' + d)
             elif method == 'turn/completed':
                 status = (params.get('turn') or {}).get('status')
                 if status and status != 'completed':
-                    return None, 'turn status: %s' % status
+                    return None, outputs, 'turn status: %s' % status
                 if speak:
                     speak(buf.strip(), True)
                 return final_text or ''.join(deltas.values()) or \
-                    '(no output)', None
+                    '(no output)', outputs, None
             elif method == 'eof':
-                return None, 'codex app-server exited'
+                return None, outputs, 'codex app-server exited'
             elif method in ('error', 'turn/error'):
-                return None, json.dumps(params)[:300]
-        return None, 'turn timed out'
+                return None, outputs, json.dumps(params)[:300]
+        return None, outputs, 'turn timed out'
 
 
 def main():
@@ -170,7 +194,7 @@ def main():
                 pub(ws, 'aud-in', content=text, done=done,
                     turn_id=turn_id, **meta)
 
-        out, err = session.run_task(task, speak=speak)
+        out, cmd_outputs, err = session.run_task(task, speak=speak)
         if err:
             speak('Astra hit an error: ' + err, True)
         spoken = 'Astra said: ' + (out or err or '')
@@ -179,6 +203,16 @@ def main():
         # triggering another LLM turn.
         pub(ws, 'sup-out::' + meta['session_id'], role='assistant',
             content=spoken, turn_id=turn_id)
+        # Command echoes, outputs, and file diffs display as text,
+        # not voice -- each in its own bubble.
+        for block in cmd_outputs:
+            block = block.strip()
+            if not block:
+                continue
+            print("PRE", block[:120])
+            pub(ws, 'sup-out::' + meta['session_id'], role='assistant',
+                content='<pre>' + html.escape(block) + '</pre>',
+                turn_id=turn_id)
 
     while 1:
         print("Waiting on socket...")
