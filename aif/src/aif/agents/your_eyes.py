@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import re
+import shlex
 
 from aif.lib.wsutil import *
 
@@ -18,6 +19,10 @@ def repeat(thunk, exit_on_true=True, delay=0):
 
 VISION_MODEL = os.getenv('VISION_MODEL', 'llama3.2-vision')
 
+# 'ollama' (default) or 'codex' — codex pipes the prompt to stdin and
+# passes the image via -i, billed against the ChatGPT plan quota.
+VISION_BACKEND = os.getenv('VISION_BACKEND', 'ollama')
+
 ANSI_RE = re.compile(r'\x1b\[[0-9;?]*[A-Za-z]')
 
 # Set KEEP_UPLOADS=1 to retain images+markers after analysis (debugging).
@@ -32,13 +37,20 @@ PROMPT = (
 PROMPT = 'what is this? '
 
 def analyze_image(path):
-    # ollama run detects image paths inside the prompt text, not as
-    # separate argv elements — the path must be embedded in the prompt.
-    cmd = ['ollama', 'run', VISION_MODEL, PROMPT + ' Image: ' + path]
-    print("CMD", cmd)
-    res = subp.run(cmd, capture_output=True, text=True, timeout=300)
+    if VISION_BACKEND == 'codex':
+        # Verified invocation: prompt piped to stdin, image via -i.
+        cmd = 'echo %s | codex exec -i %s' % (shlex.quote(PROMPT), shlex.quote(path))
+        print("CMD", cmd)
+        res = subp.run(cmd, shell=True, capture_output=True,
+                       text=True, timeout=300)
+    else:
+        # ollama run detects image paths inside the prompt text, not as
+        # separate argv elements — the path must be embedded in the prompt.
+        cmd = ['ollama', 'run', VISION_MODEL, PROMPT + ' Image: ' + path]
+        print("CMD", cmd)
+        res = subp.run(cmd, capture_output=True, text=True, timeout=300)
     if res.returncode != 0:
-        return {'error': 'ollama exited %s' % res.returncode,
+        return {'error': '%s exited %s' % (VISION_BACKEND, res.returncode),
                 'stderr': res.stderr.strip()[-500:]}
     # The CLI emits spinner/ANSI control codes on both streams; strip them.
     out = ANSI_RE.sub('', res.stdout).strip()
