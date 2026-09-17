@@ -201,6 +201,11 @@ export class Application extends PubSubApp {
 						params.done !== false
 					) {
 						this.messageHistory.add(content, false);
+						this.debug('[Application] History message', {
+							turn_id: params.turn_id || null,
+							channel: params.channel || null,
+							preview: content.slice(0, 80),
+						});
 					}
 //					console.log("CONTENT IS STRING", content, typeof content);
 				} else {
