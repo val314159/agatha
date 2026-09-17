@@ -35,11 +35,12 @@ export class MessageHistory {
     }
     
     // Add a new message to history
-    add(text, isUser) {
+    add(text, isUser, cls = '') {
         const timestamp = new Date().toLocaleTimeString();
         this.history.push({
             text,
             isUser,
+            cls,
             timestamp
         });
         
@@ -59,7 +60,7 @@ export class MessageHistory {
         
         this.history.forEach(item => {
             const li = document.createElement('li');
-            li.className = `history-item ${item.isUser ? 'user' : 'avatar'}`;
+            li.className = `history-item ${item.isUser ? 'user' : 'avatar'}${item.cls ? ' ' + item.cls : ''}`;
             li.innerHTML = `
               <div class="font-medium">${item.text}</div>
               <span class="timestamp">${item.timestamp}</span>

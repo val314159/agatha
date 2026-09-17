@@ -219,7 +219,8 @@ export class Application extends PubSubApp {
 								((this._assistantBuf[tid] || '') + content).trim();
 							delete this._assistantBuf[tid];
 							if (text) {
-								this.messageHistory.add(text, false);
+								this.messageHistory.add(text, false,
+									params.kind === 'astra' ? 'astra' : '');
 								this.debug('[Application] History message', {
 									turn_id: params.turn_id || null,
 									channel: params.channel || null,
@@ -227,7 +228,8 @@ export class Application extends PubSubApp {
 								});
 							}
 						} else if (content.trim()) {
-							this.messageHistory.add(content, false);
+							this.messageHistory.add(content, false,
+								params.kind === 'astra' ? 'astra' : '');
 							this.debug('[Application] History message', {
 								turn_id: params.turn_id || null,
 								channel: params.channel || null,
@@ -253,7 +255,8 @@ export class Application extends PubSubApp {
 					const text = ((this._assistantBuf || {})[tid] || '').trim();
 					delete this._assistantBuf?.[tid];
 					if (text) {
-						this.messageHistory.add(text, false);
+						this.messageHistory.add(text, false,
+							params.kind === 'astra' ? 'astra' : '');
 						this.debug('[Application] History message', {
 							turn_id: params.turn_id || null,
 							channel: params.channel || null,

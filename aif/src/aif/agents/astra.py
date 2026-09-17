@@ -202,7 +202,7 @@ def main():
         # Echo to the session's sup-out so it lands in history without
         # triggering another LLM turn.
         pub(ws, 'sup-out::' + meta['session_id'], role='assistant',
-            content=spoken, turn_id=turn_id)
+            content=spoken, turn_id=turn_id, kind='astra')
         # Command echoes, outputs, and file diffs display as text,
         # not voice -- each in its own bubble.
         for block in cmd_outputs:
@@ -212,7 +212,7 @@ def main():
             print("PRE", block[:120])
             pub(ws, 'sup-out::' + meta['session_id'], role='assistant',
                 content='<pre>' + html.escape(block) + '</pre>',
-                turn_id=turn_id)
+                turn_id=turn_id, kind='astra')
 
     while 1:
         print("Waiting on socket...")
