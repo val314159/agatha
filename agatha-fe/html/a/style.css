@@ -71,12 +71,30 @@
       pointer-events: none;
     }
     
+    #history-columns {
+      display: flex;
+      gap: 0.5rem;
+      flex-grow: 1;
+      min-height: 0;
+    }
+
     #history-list {
       list-style-type: none;
       padding: 0;
       margin: 0;
       overflow-y: auto;
-      flex-grow: 1;
+      flex: 2;
+      min-width: 0;
+    }
+
+    #astra-list {
+      list-style-type: none;
+      padding: 0 0 0 0.5rem;
+      margin: 0;
+      overflow-y: auto;
+      flex: 1;
+      min-width: 0;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
     }
     
     .history-item {

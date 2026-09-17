@@ -56,8 +56,10 @@ export class MessageHistory {
     // Update the history display in the UI
     updateDisplay() {
         const historyList = document.getElementById('history-list');
+        const astraList = document.getElementById('astra-list');
         historyList.innerHTML = '';
-        
+        if (astraList) astraList.innerHTML = '';
+
         this.history.forEach(item => {
             const li = document.createElement('li');
             li.className = `history-item ${item.isUser ? 'user' : 'avatar'}${item.cls ? ' ' + item.cls : ''}`;
@@ -65,10 +67,12 @@ export class MessageHistory {
               <div class="font-medium">${item.text}</div>
               <span class="timestamp">${item.timestamp}</span>
             `;
-            historyList.appendChild(li);
+            const target = (item.cls === 'astra' && astraList) ? astraList : historyList;
+            target.appendChild(li);
         });
-        
+
         // Scroll to bottom
         historyList.scrollTop = historyList.scrollHeight;
+        if (astraList) astraList.scrollTop = astraList.scrollHeight;
     }
 }
