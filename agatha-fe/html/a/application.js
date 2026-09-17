@@ -111,6 +111,15 @@ export class Application extends PubSubApp {
 		const method=msg.method
 		const params=msg.params
 		if(method=="pub"){
+			console.log('[pub]', params.channel, params.type || '',
+				String(params.content ?? '').slice(0, 100));
+			if (params.type !== 'audio_pcm') {
+				this.debug('[pub] ' + (params.channel || '?'), {
+					type: params.type || null,
+					role: params.role || null,
+					preview: String(params.content ?? '').slice(0, 60),
+				});
+			}
 			if(params.type=="audio"){
 				this.setRuntimeState({ audio: 'audio-generating' });
 				this.generateAudio(params.url)
@@ -195,17 +204,36 @@ export class Application extends PubSubApp {
 				const content = params.content
 //				console.log("VALID-CONTENT", typeof(content), content, role)
 				if (typeof content === 'string') {
-					if (
-						params.role === 'assistant' &&
-						content.trim() &&
-						params.done !== false
-					) {
-						this.messageHistory.add(content, false);
-						this.debug('[Application] History message', {
-							turn_id: params.turn_id || null,
-							channel: params.channel || null,
-							preview: content.slice(0, 80),
-						});
+					if (params.role === 'assistant') {
+						// llm8 streams chunks with done=false and flags the
+						// real end via round_done on a final empty message.
+						// Buffer per turn; flush on done/round_done. Messages
+						// with no flags at all (e.g. astra echoes) display now.
+						const tid = params.turn_id || '_';
+						this._assistantBuf = this._assistantBuf || {};
+						if (params.done === false || params.round_done === false) {
+							this._assistantBuf[tid] =
+								(this._assistantBuf[tid] || '') + content;
+						} else if (params.done || params.round_done) {
+							const text =
+								((this._assistantBuf[tid] || '') + content).trim();
+							delete this._assistantBuf[tid];
+							if (text) {
+								this.messageHistory.add(text, false);
+								this.debug('[Application] History message', {
+									turn_id: params.turn_id || null,
+									channel: params.channel || null,
+									preview: text.slice(0, 80),
+								});
+							}
+						} else if (content.trim()) {
+							this.messageHistory.add(content, false);
+							this.debug('[Application] History message', {
+								turn_id: params.turn_id || null,
+								channel: params.channel || null,
+								preview: content.slice(0, 80),
+							});
+						}
 					}
 //					console.log("CONTENT IS STRING", content, typeof content);
 				} else {
@@ -214,6 +242,23 @@ export class Application extends PubSubApp {
 						this.phonemeList = content;
 					} else {
 						console.warn("CONTENT IS UNKNOWN TYPE", typeof content, content);
+					}
+				}
+			}else if(params.kind === 'history' || params.done || params.round_done){
+				// Flag-only marker (end-of-round/history record) — flush any
+				// buffered assistant text for this turn into history.
+				if (params.role === 'assistant' && (params.done || params.round_done)) {
+					this.setRuntimeState({ backend: 'assistant-done' });
+					const tid = params.turn_id || '_';
+					const text = ((this._assistantBuf || {})[tid] || '').trim();
+					delete this._assistantBuf?.[tid];
+					if (text) {
+						this.messageHistory.add(text, false);
+						this.debug('[Application] History message', {
+							turn_id: params.turn_id || null,
+							channel: params.channel || null,
+							preview: text.slice(0, 80),
+						});
 					}
 				}
 			}else{
