@@ -1,5 +1,5 @@
 import { UrlParams } from './urlParams.js'
-import { MessageHistory } from './messageHistory.js'
+import { MessageHistory } from './messageHistory.js?v=2'
 import { SceneRenderer } from './sceneRenderer.js'
 import { Blinker } from './blinker.js'
 import { LipSyncState } from './lipSyncState.js'
@@ -117,6 +117,7 @@ export class Application extends PubSubApp {
 				this.debug('[pub] ' + (params.channel || '?'), {
 					type: params.type || null,
 					role: params.role || null,
+					kind: params.kind || null,
 					preview: String(params.content ?? '').slice(0, 60),
 				});
 			}
