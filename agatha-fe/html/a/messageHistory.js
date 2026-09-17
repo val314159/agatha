@@ -63,7 +63,10 @@ export class MessageHistory {
         this.history.forEach(item => {
             const li = document.createElement('li');
             li.className = `history-item ${item.isUser ? 'user' : 'avatar'}${item.cls ? ' ' + item.cls : ''}`;
-            li.innerHTML = `
+            li.innerHTML = item.cls === 'astra' ? `
+              ${item.text}
+              <span class="timestamp">${item.timestamp}</span>
+            ` : `
               <div class="font-medium">${item.text}</div>
               <span class="timestamp">${item.timestamp}</span>
             `;

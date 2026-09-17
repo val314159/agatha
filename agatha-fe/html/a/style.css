@@ -133,9 +133,11 @@
       margin: 0;
       padding: 0.4rem 0.6rem;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 400;
       font-size: 0.75rem;
       line-height: 1.35;
       white-space: pre-wrap;
+      word-break: normal;
       overflow-wrap: anywhere;
       background: rgba(0, 0, 0, 0.35);
       border-radius: 0.375rem;

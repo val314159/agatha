@@ -1,5 +1,5 @@
 import { UrlParams } from './urlParams.js'
-import { MessageHistory } from './messageHistory.js?v=3'
+import { MessageHistory } from './messageHistory.js?v=4'
 import { SceneRenderer } from './sceneRenderer.js'
 import { Blinker } from './blinker.js'
 import { LipSyncState } from './lipSyncState.js'
