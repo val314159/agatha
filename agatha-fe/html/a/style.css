@@ -146,9 +146,8 @@
     .history-item .timestamp {
       font-size: 0.7rem;
       opacity: 0.8;
-      display: block;
-      margin-top: 0.25rem;
-      text-align: right;
+      display: inline;
+      margin-left: 0.5rem;
       color: #a0aec0; /* Light blue gray */
     }
     

@@ -63,13 +63,12 @@ export class MessageHistory {
         this.history.forEach(item => {
             const li = document.createElement('li');
             li.className = `history-item ${item.isUser ? 'user' : 'avatar'}${item.cls ? ' ' + item.cls : ''}`;
-            li.innerHTML = item.cls === 'astra' ? `
-              ${item.text}
-              <span class="timestamp">${item.timestamp}</span>
-            ` : `
-              <div class="font-medium">${item.text}</div>
-              <span class="timestamp">${item.timestamp}</span>
-            `;
+            // <<happy>>-style expression cues are for the avatar, not reading.
+            const text = item.cls === 'astra' ? item.text
+                : item.text.replace(/<<[^>]*>>/g, '').trim();
+            li.innerHTML = item.cls === 'astra'
+                ? `${text}<span class="timestamp">${item.timestamp}</span>`
+                : `<div class="font-medium">${text}<span class="timestamp">${item.timestamp}</span></div>`;
             const target = (item.cls === 'astra' && astraList) ? astraList : historyList;
             target.appendChild(li);
         });
